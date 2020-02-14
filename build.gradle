@@ -1,0 +1,37 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'com.guardsquare'
+version '1.0'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+application {
+    mainClassName = 'proguard.tools.KotlinMetadataPrinter'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': application.mainClassName
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    archiveName "kotlin-metadata-printer.jar"
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation group: 'org.ow2.asm', name: 'asm-tree', version: '5.0.3'
+    implementation group: 'org.jetbrains.kotlinx', name: 'kotlinx-metadata-jvm', version: '0.1.0'
+    implementation group: 'info.picocli', name: 'picocli', version: '3.6.1'
+    implementation 'net.sf.proguard:proguard-core:7.0.0'
+}
