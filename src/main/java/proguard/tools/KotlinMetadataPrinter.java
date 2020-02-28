@@ -7,26 +7,37 @@
 package proguard.tools;
 
 import picocli.CommandLine;
-import picocli.CommandLine.*;
-import proguard.classfile.*;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+import proguard.classfile.ClassPool;
+import proguard.classfile.attribute.Attribute;
 import proguard.classfile.attribute.annotation.visitor.AllAnnotationVisitor;
 import proguard.classfile.attribute.annotation.visitor.AnnotationTypeFilter;
 import proguard.classfile.attribute.visitor.AllAttributeVisitor;
 import proguard.classfile.attribute.visitor.AttributeNameFilter;
-import proguard.classfile.kotlin.*;
-import proguard.classfile.kotlin.visitors.MultiKotlinMetadataVisitor;
-import proguard.classfile.util.ClassReferenceInitializer;
-import proguard.classfile.util.ClassSuperHierarchyInitializer;
+import proguard.classfile.kotlin.KotlinConstants;
+import proguard.classfile.kotlin.visitor.MultiKotlinMetadataVisitor;
+import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor;
 import proguard.classfile.util.ClassUtil;
 import proguard.classfile.util.WarningPrinter;
-import proguard.classfile.visitor.*;
+import proguard.classfile.util.kotlin.KotlinMetadataInitializer;
+import proguard.classfile.visitor.ClassCounter;
+import proguard.classfile.visitor.ClassPoolFiller;
+import proguard.classfile.visitor.ClassPrinter;
+import proguard.classfile.visitor.MultiClassVisitor;
 import proguard.io.*;
 import proguard.resources.file.ResourceFilePool;
+import proguard.resources.file.visitor.ResourceFilePoolFiller;
+import proguard.resources.kotlinmodule.io.KotlinModuleDataEntryReader;
+import proguard.resources.kotlinmodule.visitor.KotlinModulePrinter;
 import proguard.util.ExtensionMatcher;
 import proguard.util.OrMatcher;
 
-import java.io.*;
-import java.util.Collections;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 
 /**
@@ -103,7 +114,7 @@ public class KotlinMetadataPrinter implements Runnable
                    new ReferencedKotlinMetadataVisitor(
                    new MultiKotlinMetadataVisitor(
                        (clazz, kotlinMetadata) -> kotlinMetadataCount++,
-                       new proguard.classfile.kotlin.KotlinMetadataPrinter(outPrinter))));
+                       new proguard.classfile.kotlin.visitor.KotlinMetadataPrinter(outPrinter, ""))));
             }
 
             if (printClass)
@@ -130,28 +141,45 @@ public class KotlinMetadataPrinter implements Runnable
 
             if (printModule)
             {
-/*                classReader =
+                classReader =
                     new NameFilteredDataEntryReader("META-INF/*.kotlin_module",
                     new KotlinModuleDataEntryReader(
                         new ResourceFilePoolFiller(resourceFilePool)),
-                    classReader);*/
+                    classReader);
             }
 
             // Extract files from an archive if necessary.
             classReader =
                     new FilteredDataEntryReader(
-                    new DataEntryNameFilter(new OrMatcher(new ExtensionMatcher("jar"), new ExtensionMatcher("zip"), new ExtensionMatcher("apk"))),
+                    new DataEntryNameFilter(new OrMatcher(
+                                            new ExtensionMatcher("jar"),
+                                            new ExtensionMatcher("zip"),
+                                            new ExtensionMatcher("apk"))),
                         new JarReader(classReader),
                     classReader);
 
             // Parse all classes from the input and fill the classpool.
             (new FileSource(inputFile)).pumpDataEntries(classReader);
 
-            // Initialize the classes in the class pool.
-            initialize(programClassPool, new ClassPool());
+            if (printMetadata)
+            {
+                // Initialize the Kotlin metadata.
+                programClassPool.classesAccept(
+                        new AllAttributeVisitor(
+                        new AttributeNameFilter(Attribute.RUNTIME_VISIBLE_ANNOTATIONS,
+                        new AllAnnotationVisitor(
+                        new AnnotationTypeFilter(KotlinConstants.TYPE_KOTLIN_METADATA,
+                        new KotlinMetadataInitializer(new WarningPrinter(
+                                                      new PrintWriter(System.out))))))));
 
-            // Run the Kotlin printer on the classes.
-            programClassPool.classesAccept(internalClassNameFilter, kotlinPrinter);
+                // Run the Kotlin printer on the classes.
+                programClassPool.classesAccept(internalClassNameFilter, kotlinPrinter);
+            }
+
+            if (printModule)
+            {
+                resourceFilePool.resourceFilesAccept(new KotlinModulePrinter(outPrinter, ""));
+            }
 
             if (classCounter.getCount() == 0)
             {
@@ -171,58 +199,6 @@ public class KotlinMetadataPrinter implements Runnable
         {
             System.err.println("Failed printing Kotlin metadata: " + e.getMessage());
         }
-    }
-
-    /**
-     * Initializes the cached cross-references of the classes in the given
-     * class pools.
-     *
-     * @param programClassPool the program class pool, typically with processed
-     *                         classes.
-     * @param libraryClassPool the library class pool, typically with run-time
-     *                         classes.
-     */
-    public static void initialize(ClassPool programClassPool,
-                                  ClassPool libraryClassPool)
-    {
-        // We hide the warnings about missing dependencies, as we just want to print the metadata.
-        PrintWriter    printWriter    = new PrintWriter(System.err);
-        WarningPrinter warningPrinter = new WarningPrinter(printWriter, Collections.singletonList("**"));
-
-        // Initialize the class hierarchies.
-        libraryClassPool.classesAccept(
-            new ClassSuperHierarchyInitializer(programClassPool,
-                                               libraryClassPool,
-                                               null,
-                                               null));
-
-        programClassPool.classesAccept(
-            new ClassSuperHierarchyInitializer(programClassPool,
-                                               libraryClassPool,
-                                               warningPrinter,
-                                               warningPrinter));
-
-        ClassVisitor kotlinMetadataInitializer =
-            new AllAttributeVisitor(
-            new AttributeNameFilter("RuntimeVisibleAnnotations",
-            new AllAnnotationVisitor(
-            new AnnotationTypeFilter(KotlinConstants.TYPE_KOTLIN_METADATA,
-                                     new KotlinMetadataInitializer()))));
-
-        programClassPool.classesAccept(kotlinMetadataInitializer);
-        libraryClassPool.classesAccept(kotlinMetadataInitializer);
-
-        // Initialize the other references from the program classes.
-        programClassPool.classesAccept(
-            new ClassReferenceInitializer(programClassPool,
-                                          libraryClassPool,
-                                          warningPrinter,
-                                          warningPrinter,
-                                          warningPrinter,
-                                          null));
-
-        // Flush the warnings.
-        printWriter.flush();
     }
 
     public static void main(String[] args)
