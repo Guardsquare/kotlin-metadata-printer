@@ -27,8 +27,12 @@ import proguard.classfile.visitor.ClassPoolFiller;
 import proguard.classfile.visitor.ClassPrinter;
 import proguard.classfile.visitor.MultiClassVisitor;
 import proguard.io.*;
+import proguard.resources.file.ResourceFile;
 import proguard.resources.file.ResourceFilePool;
+import proguard.resources.file.visitor.MultiResourceFileVisitor;
 import proguard.resources.file.visitor.ResourceFilePoolFiller;
+import proguard.resources.file.visitor.ResourceFileVisitor;
+import proguard.resources.kotlinmodule.KotlinModule;
 import proguard.resources.kotlinmodule.io.KotlinModuleDataEntryReader;
 import proguard.resources.kotlinmodule.visitor.KotlinModulePrinter;
 import proguard.util.ExtensionMatcher;
@@ -79,6 +83,7 @@ public class KotlinMetadataPrinter implements Runnable
     private File outputFile;
 
     private int kotlinMetadataCount = 0;
+    private int kotlinModuleCount   = 0;
 
     public void run()
     {
@@ -179,16 +184,32 @@ public class KotlinMetadataPrinter implements Runnable
 
             if (printModule)
             {
-                resourceFilePool.resourceFilesAccept(new KotlinModulePrinter(outPrinter, ""));
+                resourceFilePool.resourceFilesAccept(
+                    new MultiResourceFileVisitor(
+                    new KotlinModulePrinter(outPrinter, ""),
+                    new ResourceFileVisitor()
+                    {
+                        @Override
+                        public void visitResourceFile(ResourceFile resourceFile) {}
+
+                        @Override
+                        public void visitKotlinModule(KotlinModule kotlinModule) {
+                            kotlinModuleCount++;
+                        }
+                    }));
             }
 
-            if (classCounter.getCount() == 0)
+            if ((printClass || printMetadata) && classCounter.getCount() == 0)
             {
                 System.err.println("No classes found");
             }
             else if (printMetadata && kotlinMetadataCount == 0)
             {
                 System.err.println("No Kotlin metadata found in " + classCounter.getCount() + " classes");
+            }
+            else if (printModule && kotlinModuleCount == 0)
+            {
+                System.err.println("No Kotlin modules found");
             }
 
             if (outputFileOutputStream != null)
