@@ -46,11 +46,12 @@ import java.io.PrintWriter;
  * @author James Hamilton
  */
 @Command(name                 = "kotlin-metadata-printer",
-         description          = "Print Kotlin Metadata",
+         description          = "\nThe Kotlin metadata printer is a free tool to print the Kotlin metadata in a human-readable format. The printer is " +
+                                "built on the ProGuard Core library. The tool can process class files, zip files, jars or apks.",
          parameterListHeading = "%nParameters:%n",
          optionListHeading    = "%nOptions:%n",
-         header               = "Kotlin metadata printer",
-         footer               = "Built on ProGuard")
+         header               = "\nKotlin metadata printer, built on the ProGuard Core library.\n",
+         footer               = "\nCopyright (c) 2002-2020 Guardsquare NV.")
 public class KotlinMetadataPrinter implements Runnable
 {
     @SuppressWarnings("CanBeFinal")
