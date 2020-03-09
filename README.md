@@ -29,11 +29,11 @@ Or you can execute the built printer jar as follows:
     
 # Options
 
-    --filter=<classNameFilter> class name filter
-    --output=<outputFile>      write output to this file instead of stdout
-    --printclass               print corresponding class
-    --printmetadata            print metadata
-    --printmodule              print Kotlin module information
+    --filter '<classNameFilter>' class name filter e.g. --filter '!android.**,com.mypackage.**'
+    --output '<outputFile>'      write output to this file instead of stdout e.g. --output 'myfile.txt'
+    --printclass                 print corresponding class
+    --printmetadata              print metadata
+    --printmodule                print Kotlin module information
 
 # License
 
