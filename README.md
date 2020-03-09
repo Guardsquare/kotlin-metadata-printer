@@ -35,6 +35,34 @@ Or you can execute the built printer jar as follows:
     --printmetadata              print metadata
     --printmodule                print Kotlin module information
 
+# Example
+
+The following example is a basic Android activity class written in Kotlin:
+
+```kotlin
+/**
+ * Sample activity that displays "Hello world!".
+ */
+class HelloWorldActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+    }
+}
+```
+
+and this is its associated metadata as printed by the Kotlin metadata printer:
+
+```
+Kotlin public final usual class(com.example.HelloWorldActivity)
+  [SUPT] android.support.v7.app.AppCompatActivity 
+  [CTOR] public primary <init>()V
+  [FUNC] protected open fun "onCreate" [void onCreate(android.os.Bundle)] 
+    [VALP] "savedInstanceState" 
+      [TYPE] android.os.Bundle? 
+    [RTRN] kotlin.Unit 
+```
+
 # License
 
 The Kotlin metadata printer are distributed under the terms of the Apache License Version 2.0. Please consult the [license
