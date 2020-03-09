@@ -29,9 +29,14 @@ jar {
 }
 
 dependencies {
+    // ProGuard Core.
+    implementation group: 'net.sf.proguard', name:'proguard-core', version: '7.0.0'
+
+    // dex2jar dependencies.
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation group: 'org.ow2.asm', name: 'asm-tree', version: '5.0.3'
+    implementation group: 'org.ow2.asm', name: 'asm-debug-all', version: '5.0.3'
     implementation group: 'org.jetbrains.kotlinx', name: 'kotlinx-metadata-jvm', version: '0.1.0'
+
+    // picocli for command line parsing.
     implementation group: 'info.picocli', name: 'picocli', version: '3.6.1'
-    implementation 'net.sf.proguard:proguard-core:7.0.0'
 }
