@@ -201,15 +201,15 @@ public class KotlinMetadataPrinter implements Runnable
 
             if ((printClass || printMetadata) && classCounter.getCount() == 0)
             {
-                System.err.println("No classes found");
+                System.out.println("No classes found");
             }
             else if (printMetadata && kotlinMetadataCount == 0)
             {
-                System.err.println("No Kotlin metadata found in " + classCounter.getCount() + " classes");
+                System.out.println("No Kotlin metadata found in " + classCounter.getCount() + " classes");
             }
             else if (printModule && kotlinModuleCount == 0)
             {
-                System.err.println("No Kotlin modules found");
+                System.out.println("No Kotlin modules found");
             }
 
             if (outputFileOutputStream != null)
@@ -217,9 +217,10 @@ public class KotlinMetadataPrinter implements Runnable
                 outputFileOutputStream.close();
             }
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             System.err.println("Failed printing Kotlin metadata: " + e.getMessage());
+            System.exit(-1);
         }
     }
 
