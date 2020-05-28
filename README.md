@@ -31,9 +31,8 @@ Or you can execute the built printer jar as follows:
 
     --filter '<classNameFilter>' class name filter e.g. --filter '!android.**,com.mypackage.**'
     --output '<outputFile>'      write output to this file instead of stdout e.g. --output 'myfile.txt'
-    --printclass                 print corresponding class
-    --printmetadata              print metadata
-    --printmodule                print Kotlin module information
+    --json                       output the metadata in a JSON structure
+    --divider                    a string that is printed between each Kotlin metadata
 
 # Example
 
@@ -54,13 +53,17 @@ class HelloWorldActivity : AppCompatActivity() {
 and this is its associated metadata as printed by the Kotlin metadata printer:
 
 ```
-Kotlin public final usual class(com.example.HelloWorldActivity)
-  [SUPT] android.support.v7.app.AppCompatActivity 
-  [CTOR] public primary <init>()V
-  [FUNC] protected open fun "onCreate" [void onCreate(android.os.Bundle)] 
-    [VALP] "savedInstanceState" 
-      [TYPE] android.os.Bundle? 
-    [RTRN] kotlin.Unit 
+/**
+* Kotlin class.
+* From Java class: com.example.HelloWorldActivity
+*/
+class HelloWorldActivity : android.support.v7.app.AppCompatActivity {
+
+    // Functions
+
+    protected open fun onCreate(savedInstanceState: android.os.Bundle?) { }
+}
+
 ```
 
 # License

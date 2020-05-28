@@ -18,42 +18,42 @@
  */
 package proguard.tools;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.text.WordUtils;
+import org.json.JSONObject;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import proguard.classfile.ClassPool;
+import proguard.classfile.Clazz;
 import proguard.classfile.attribute.Attribute;
 import proguard.classfile.attribute.annotation.visitor.AllAnnotationVisitor;
 import proguard.classfile.attribute.annotation.visitor.AnnotationTypeFilter;
 import proguard.classfile.attribute.visitor.AllAttributeVisitor;
 import proguard.classfile.attribute.visitor.AttributeNameFilter;
-import proguard.classfile.kotlin.KotlinConstants;
+import proguard.classfile.kotlin.*;
+import proguard.classfile.kotlin.visitor.AllFunctionsVisitor;
+import proguard.classfile.kotlin.visitor.KotlinFunctionVisitor;
 import proguard.classfile.kotlin.visitor.MultiKotlinMetadataVisitor;
 import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor;
+import proguard.classfile.util.ClassReferenceInitializer;
 import proguard.classfile.util.ClassUtil;
 import proguard.classfile.util.WarningPrinter;
 import proguard.classfile.util.kotlin.KotlinMetadataInitializer;
-import proguard.classfile.visitor.ClassCounter;
-import proguard.classfile.visitor.ClassPoolFiller;
-import proguard.classfile.visitor.ClassPrinter;
-import proguard.classfile.visitor.MultiClassVisitor;
+import proguard.classfile.visitor.*;
 import proguard.io.*;
-import proguard.resources.file.ResourceFile;
-import proguard.resources.file.ResourceFilePool;
-import proguard.resources.file.visitor.MultiResourceFileVisitor;
-import proguard.resources.file.visitor.ResourceFilePoolFiller;
-import proguard.resources.file.visitor.ResourceFileVisitor;
-import proguard.resources.kotlinmodule.KotlinModule;
-import proguard.resources.kotlinmodule.io.KotlinModuleDataEntryReader;
-import proguard.resources.kotlinmodule.visitor.KotlinModulePrinter;
+import proguard.kotlin.printer.KotlinSourcePrinter;
 import proguard.util.ExtensionMatcher;
 import proguard.util.OrMatcher;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -68,23 +68,12 @@ import java.io.PrintWriter;
          optionListHeading    = "%nOptions:%n",
          header               = "\nKotlin metadata printer, built on the ProGuard Core library.\n",
          footer               = "\nCopyright (c) 2002-2020 Guardsquare NV.")
-public class KotlinMetadataPrinter implements Runnable
+public class KotlinMetadataPrinter
+implements   Runnable
 {
-    @SuppressWarnings("CanBeFinal")
+    @SuppressWarnings("FieldMayBeFinal")
     @Option(names = "--filter", description = "class name filter")
     private String classNameFilter = null;
-
-    @SuppressWarnings("CanBeFinal")
-    @Option(names = "--printmodule", description = "print Kotlin module information")
-    private boolean printModule = false;
-
-    @SuppressWarnings("CanBeFinal")
-    @Option(names = "--printclass", description = "print corresponding class")
-    private boolean printClass = false;
-
-    @SuppressWarnings("CanBeFinal")
-    @Option(names = "--printmetadata", description = "print metadata")
-    private boolean printMetadata = false;
 
     @SuppressWarnings("unused")
     @Parameters(index = "0", arity = "1", paramLabel = "inputfile", description = "inputfile to process (*.apk|.jar|zip|class)")
@@ -94,22 +83,27 @@ public class KotlinMetadataPrinter implements Runnable
     @Option(names = "--output", description = "write output to this file instead of stdout")
     private File outputFile;
 
+    @SuppressWarnings("FieldMayBeFinal")
+    @Option(names = "--json", description = "Output JSON")
+    private boolean json = false;
+
+    @SuppressWarnings("FieldMayBeFinal")
+    @Option(arity = "1", names = "--divider", description = "string to print in between Kotlin metadata items")
+    private String  divider = "/* ------------------------------------------------- */\n";
+
     private int kotlinMetadataCount = 0;
-    private int kotlinModuleCount   = 0;
+
 
     public void run()
     {
-        printMetadata = (!printModule && !printClass && !printMetadata) || printMetadata || printClass;
-
         try
         {
             // Local variables.
-            File                   inputFile              = new File(inputFilename.getAbsolutePath());
-            ClassPool              programClassPool       = new ClassPool();
-            ResourceFilePool       resourceFilePool       = new ResourceFilePool();
+            File             inputFile              = new File(inputFilename.getAbsolutePath());
+            ClassPool        programClassPool       = new ClassPool();
+            FileOutputStream outputFileOutputStream = null;
+            PrintWriter      outPrinter;
 
-            FileOutputStream      outputFileOutputStream = null;
-            PrintWriter           outPrinter;
 
             // Construct printer.
             // ------------------
@@ -124,21 +118,12 @@ public class KotlinMetadataPrinter implements Runnable
             }
 
             ClassCounter      classCounter  = new ClassCounter();
-            MultiClassVisitor kotlinPrinter = new MultiClassVisitor(classCounter);
-
-            if (printMetadata)
-            {
-                kotlinPrinter.addClassVisitor(
-                   new ReferencedKotlinMetadataVisitor(
-                   new MultiKotlinMetadataVisitor(
-                       (clazz, kotlinMetadata) -> kotlinMetadataCount++,
-                       new proguard.classfile.kotlin.visitor.KotlinMetadataPrinter(outPrinter, ""))));
-            }
-
-            if (printClass)
-            {
-                kotlinPrinter.addClassVisitor(new ClassPrinter(outPrinter));
-            }
+            MultiClassVisitor kotlinPrinter = new MultiClassVisitor(
+                 classCounter,
+                 new ReferencedKotlinMetadataVisitor(
+                 new MultiKotlinMetadataVisitor(
+                     (clazz, kotlinMetadata) -> kotlinMetadataCount++,
+                     new KotlinSourcePrinter(programClassPool))));
 
             // Construct reader.
             // -----------------
@@ -153,18 +138,9 @@ public class KotlinMetadataPrinter implements Runnable
             // Convert dex files to a JAR first.
             classReader =
                 new NameFilteredDataEntryReader("classes*.dex",
-                new Dex2JarReader(printClass,
+                new Dex2JarReader(false,
                     classReader),
                 classReader);
-
-            if (printModule)
-            {
-                classReader =
-                    new NameFilteredDataEntryReader("META-INF/*.kotlin_module",
-                    new KotlinModuleDataEntryReader(
-                        new ResourceFilePoolFiller(resourceFilePool)),
-                    classReader);
-            }
 
             // Extract files from an archive if necessary.
             classReader =
@@ -179,49 +155,100 @@ public class KotlinMetadataPrinter implements Runnable
             // Parse all classes from the input and fill the classpool.
             (new FileSource(inputFile)).pumpDataEntries(classReader);
 
-            if (printMetadata)
+            initialize(programClassPool);
+            // Run the Kotlin printer on the classes.
+            programClassPool.classesAccept(internalClassNameFilter, kotlinPrinter);
+
+            if (json)
             {
-                // Initialize the Kotlin metadata.
-                programClassPool.classesAccept(
-                        new AllAttributeVisitor(
-                        new AttributeNameFilter(Attribute.RUNTIME_VISIBLE_ANNOTATIONS,
-                        new AllAnnotationVisitor(
-                        new AnnotationTypeFilter(KotlinConstants.TYPE_KOTLIN_METADATA,
-                        new KotlinMetadataInitializer(new WarningPrinter(
-                                                      new PrintWriter(System.out))))))));
+                JSONObject rootObject               = new JSONObject();
+                JSONObject jsonMetadataList         = new JSONObject();
+                JSONObject statistics               = new JSONObject();
+                JSONObject javaStatistics           = new JSONObject();
+                JSONObject kotlinStatistics         = new JSONObject();
+                JSONObject kotlinMetadataStatistics = new JSONObject();
+                kotlinMetadataStatistics.put(metadataKindToString(KotlinConstants.METADATA_KIND_CLASS),                   0);
+                kotlinMetadataStatistics.put(metadataKindToString(KotlinConstants.METADATA_KIND_FILE_FACADE),             0);
+                kotlinMetadataStatistics.put(metadataKindToString(KotlinConstants.METADATA_KIND_SYNTHETIC_CLASS),         0);
+                kotlinMetadataStatistics.put(metadataKindToString(KotlinConstants.METADATA_KIND_MULTI_FILE_CLASS_FACADE), 0);
+                kotlinMetadataStatistics.put(metadataKindToString(KotlinConstants.METADATA_KIND_MULTI_FILE_CLASS_PART),   0);
+                JSONObject kotlinFunctionStatistics = new JSONObject();
+                kotlinFunctionStatistics.put("normal",    0);
+                kotlinFunctionStatistics.put("synthetic", 0);
 
-                // Run the Kotlin printer on the classes.
-                programClassPool.classesAccept(internalClassNameFilter, kotlinPrinter);
-            }
+                programClassPool.classesAccept(internalClassNameFilter,
+                    new MultiClassVisitor(
+                    // Build the JSON object.
+                    new ClassProcessingInfoFilter(Objects::nonNull,
+                    new ReferencedKotlinMetadataVisitor(
+                    (clazz, kotlinMetadata) -> {
+                        JSONObject metadata = new JSONObject();
+                        metadata.put("package",    ClassUtil.externalClassName(ClassUtil.internalPackageName(clazz.getName())));
+                        metadata.put("name",       ClassUtil.externalShortClassName(ClassUtil.internalShortClassName(clazz.getName())));
+                        metadata.put("kind",       metadataKindToString(kotlinMetadata.k));
+                        metadata.put("printed",    clazz.getProcessingInfo());
+                        metadata.put("intrinsics", Collections.EMPTY_MAP); // TODO(#1929)
+                        jsonMetadataList.put(ClassUtil.externalClassName(clazz.getName()), metadata);
+                    })),
 
-            if (printModule)
-            {
-                resourceFilePool.resourceFilesAccept(
-                    new MultiResourceFileVisitor(
-                    new KotlinModulePrinter(outPrinter, ""),
-                    new ResourceFileVisitor()
-                    {
+                    // Collect statistics.
+                    new ReferencedKotlinMetadataVisitor(
+                    new MultiKotlinMetadataVisitor(
+                    new AllFunctionsVisitor(
+                    new KotlinFunctionVisitor() {
                         @Override
-                        public void visitResourceFile(ResourceFile resourceFile) {}
-
-                        @Override
-                        public void visitKotlinModule(KotlinModule kotlinModule) {
-                            kotlinModuleCount++;
+                        public void visitFunction(Clazz clazz, KotlinDeclarationContainerMetadata kotlinDeclarationContainerMetadata, KotlinFunctionMetadata kotlinFunctionMetadata) {
+                            kotlinFunctionStatistics.increment("normal");
                         }
+
+                        @Override
+                        public void visitSyntheticFunction(Clazz clazz, KotlinSyntheticClassKindMetadata kotlinSyntheticClassKindMetadata, KotlinFunctionMetadata kotlinFunctionMetadata) {
+                            kotlinFunctionStatistics.increment("synthetic");
+                        }
+
+                        @Override
+                        public void visitAnyFunction(Clazz clazz, KotlinMetadata kotlinMetadata, KotlinFunctionMetadata kotlinFunctionMetadata) { }
+                    }),
+
+                    (_clazz, kotlinMetadata) -> kotlinMetadataStatistics.increment(metadataKindToString(kotlinMetadata.k))
+                ))));
+
+                statistics.put("java",       javaStatistics.put("classes", classCounter.getCount()));
+                statistics.put("kotlin",     kotlinStatistics.put("metadata", kotlinMetadataStatistics).put("functions", kotlinFunctionStatistics));
+                rootObject.put("input",      inputFile.getName());
+                rootObject.put("statistics", statistics);
+                rootObject.put("metadata",   jsonMetadataList);
+
+                outPrinter.println(rootObject.toString(3));
+            }
+            else
+            {
+                AtomicBoolean first = new AtomicBoolean(true);
+                programClassPool.classesAccept(
+                    new ClassProcessingInfoFilter(Objects::nonNull,
+                    clazz -> {
+                        if (!first.get())
+                        {
+                            outPrinter.println(divider);
+                        }
+                        first.set(false);
+                        String code = (String) clazz.getProcessingInfo();
+                        outPrinter.print(code);
                     }));
             }
 
-            if ((printClass || printMetadata) && classCounter.getCount() == 0)
+            outPrinter.flush();
+
+            if (!json)
             {
-                System.out.println("No classes found");
-            }
-            else if (printMetadata && kotlinMetadataCount == 0)
-            {
-                System.out.println("No Kotlin metadata found in " + classCounter.getCount() + " classes");
-            }
-            else if (printModule && kotlinModuleCount == 0)
-            {
-                System.out.println("No Kotlin modules found");
+                if (classCounter.getCount() == 0)
+                {
+                    System.out.println("No classes found");
+                }
+                else if (kotlinMetadataCount == 0)
+                {
+                    System.out.println("No Kotlin metadata found in " + classCounter.getCount() + " classes");
+                }
             }
 
             if (outputFileOutputStream != null)
@@ -232,8 +259,47 @@ public class KotlinMetadataPrinter implements Runnable
         catch (Exception e)
         {
             System.err.println("Failed printing Kotlin metadata: " + e.getMessage());
+            e.printStackTrace();
             System.exit(-1);
         }
+    }
+
+    /**
+     * Initializes the cached cross-references of the classes in the given
+     * class pools.
+     * @param programClassPool the program class pool.
+     */
+    public static void initialize(ClassPool programClassPool)
+    {
+        // Don't print any warnings.
+        WarningPrinter nullWarningPrinter =
+            new WarningPrinter(new PrintWriter(new OutputStream() {
+                public void write(int i) { }
+            }));
+
+        // Initialize the Kotlin metadata.
+        programClassPool.classesAccept(
+                new AllAttributeVisitor(
+                new AttributeNameFilter(Attribute.RUNTIME_VISIBLE_ANNOTATIONS,
+                new AllAnnotationVisitor(
+                new AnnotationTypeFilter(KotlinConstants.TYPE_KOTLIN_METADATA,
+                new KotlinMetadataInitializer(nullWarningPrinter))))));
+
+        // Initialize the other references from the program classes.
+        programClassPool.classesAccept(
+            new ClassReferenceInitializer(programClassPool,
+                                          new ClassPool(),
+                                          nullWarningPrinter,
+                                          nullWarningPrinter,
+                                          nullWarningPrinter,
+                                          null));
+    }
+
+    private static String metadataKindToString(int k)
+    {
+        String metadataKindString = KotlinConstants.metadataKindToString(k);
+        return metadataKindString.substring(0, 1).toLowerCase() +
+               StringUtils.remove(StringUtils.remove(WordUtils.capitalize(metadataKindString, '-', ' '), '-'), ' ').substring(1);
     }
 
     public static void main(String[] args)
