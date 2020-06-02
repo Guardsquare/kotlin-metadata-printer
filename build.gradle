@@ -30,7 +30,7 @@ jar {
 
 dependencies {
     // ProGuard Core.
-    implementation group: 'net.sf.proguard', name:'proguard-core', version: '7.0.0'
+    implementation 'com.guardsquare:proguard-core:7.0.0'
 
     // dex2jar dependencies.
     implementation fileTree(dir: 'libs', include: ['*.jar'])
