@@ -1,11 +1,11 @@
-<h4 align="center">Kotlin Metadata Printer</h4>
+<h1 align="center">Kotlin Metadata Printer</h1>
 
 <!-- Badges -->
 <p align="center">
   <!-- CI -->
   <!--a href="https://github.com/Guardsquare/kotlin-metadata-printer/actions?query=workflow%3A%22Continuous+Integration%22">
     <img src="https://github.com/Guardsquare/kotlin-metadata-printer/workflows/Continuous%20Integration/badge.svg?branch=github-workflow">
-  </a-->>
+  </a-->
 
   <!-- Github version -->
   <!--a href="releases">
