@@ -1,8 +1,37 @@
-<h1 align="center">Kotlin Metadata Printer</h1>
+<h4 align="center">Kotlin Metadata Printer</h4>
+
+<!-- Badges -->
+<p align="center">
+  <!-- CI -->
+  <!--a href="https://github.com/Guardsquare/kotlin-metadata-printer/actions?query=workflow%3A%22Continuous+Integration%22">
+    <img src="https://github.com/Guardsquare/kotlin-metadata-printer/workflows/Continuous%20Integration/badge.svg?branch=github-workflow">
+  </a-->>
+
+  <!-- Github version -->
+  <!--a href="releases">
+    <img src="https://img.shields.io/github/v/release/guardsquare/kotlin-metadata-printer">
+  </a-->
+
+  <!-- Maven -->
+  <!--a href="https://search.maven.org/search?q=g:com.guardsquare">
+    <img src="https://img.shields.io/maven-central/v/com.guardsquare/kotlin-metadata-printer">
+  </a-->
+
+  <!-- License -->
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/guardsquare/kotlin-metadata-printer">
+  </a>
+
+  <!-- Twitter -->
+  <a href="https://twitter.com/Guardsquare">
+    <img src="https://img.shields.io/twitter/follow/guardsquare?style=social">
+  </a>
+</p>
 
 The Kotlin metadata printer is a free tool to print the Kotlin metadata in
-a human-readable format. The printer is built on the [ProGuardCORE](https://github.com/Guardsquare/proguard-core) library and can process
-class files, zip files, jars or apks.
+a human-readable format. The printer is built on the
+[ProGuardCORE](https://github.com/Guardsquare/proguard-core) library and can
+process class files, zip files, jars or apks.
 
 ## Dependencies
 
