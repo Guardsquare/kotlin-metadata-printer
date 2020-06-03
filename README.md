@@ -91,7 +91,7 @@ class HelloWorldActivity : android.support.v7.app.AppCompatActivity {
     // Functions
 
     protected open fun onCreate(savedInstanceState: android.os.Bundle?) { }
-
+}
 ```
 
 ## Contributing
