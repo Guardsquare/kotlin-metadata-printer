@@ -33,6 +33,8 @@ a human-readable format. The printer is built on the
 [ProGuardCORE](https://github.com/Guardsquare/proguard-core) library and can
 process class files, zip files, jars or apks.
 
+You can try out the [Kotlin Metadata Printer online](https://tools.guardsquare.com/kotlin-metadata-printer/).
+
 ## Dependencies
 
 As ProGuard works only with Java class files the tool uses the free dex2jar library to convert the dex files to
