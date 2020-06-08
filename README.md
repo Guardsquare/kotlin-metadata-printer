@@ -33,7 +33,11 @@ a human-readable format. The printer is built on the
 [ProGuardCORE](https://github.com/Guardsquare/proguard-core) library and can
 process class files, zip files, jars or apks.
 
-You can try out the [Kotlin Metadata Printer online](https://tools.guardsquare.com/kotlin-metadata-printer/).
+You can either try out the [Kotlin Metadata Printer online](https://tools.guardsquare.com/kotlin-metadata-printer/) or run it [locally](#executing).
+
+<a href="https://tools.guardsquare.com/kotlin-metadata-printer/">
+  <img src="./screenshot.png" alt="demo of printer GUI"/>
+</a>
 
 ## Dependencies
 
