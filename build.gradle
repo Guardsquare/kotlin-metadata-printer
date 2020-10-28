@@ -30,7 +30,9 @@ jar {
 }
 
 dependencies {
-    // ProGuard and dex2jar dependencies.
+    compile 'com.guardsquare:proguard-core:7.0.0'
+
+    // dex2jar dependencies.
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // Kotlin depedencies
