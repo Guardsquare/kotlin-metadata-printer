@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Command(name                 = "kotlin-metadata-printer",
          description          = "\nThe Kotlin metadata printer is a free tool to print the Kotlin metadata in a human-readable format. The printer is " +
-                                "built on the ProGuard Core library. The tool can process class files, zip files, jars or apks.",
+                                "built on the ProGuard Core library. The tool can process class files, zip files, jars, apks or aars.",
          parameterListHeading = "%nParameters:%n",
          optionListHeading    = "%nOptions:%n",
          header               = "\nKotlin metadata printer, built on the ProGuard Core library.\n",
@@ -76,7 +76,7 @@ implements   Runnable
     private String classNameFilter = null;
 
     @SuppressWarnings("unused")
-    @Parameters(index = "0", arity = "1", paramLabel = "inputfile", description = "inputfile to process (*.apk|.jar|zip|class)")
+    @Parameters(index = "0", arity = "1", paramLabel = "inputfile", description = "inputfile to process (*.apk|aar|jar|zip|class)")
     private File inputFilename;
 
     @SuppressWarnings("unused")
@@ -145,12 +145,17 @@ implements   Runnable
             // Extract files from an archive if necessary.
             classReader =
                     new FilteredDataEntryReader(
+                    new DataEntryNameFilter(new ExtensionMatcher("aar")),
+                        new JarReader(
+                        new NameFilteredDataEntryReader("classes.jar",
+                        new JarReader(classReader))),
+                    new FilteredDataEntryReader(
                     new DataEntryNameFilter(new OrMatcher(
                                             new ExtensionMatcher("jar"),
                                             new ExtensionMatcher("zip"),
                                             new ExtensionMatcher("apk"))),
                         new JarReader(classReader),
-                    classReader);
+                    classReader));
 
             // Parse all classes from the input and fill the classpool.
             (new FileSource(inputFile)).pumpDataEntries(classReader);
