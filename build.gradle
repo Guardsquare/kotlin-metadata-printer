@@ -30,7 +30,7 @@ jar {
 }
 
 dependencies {
-    compile 'com.guardsquare:proguard-core:7.0.0'
+    compile 'com.guardsquare:proguard-core:7.0.1'
 
     // dex2jar dependencies.
     implementation fileTree(dir: 'libs', include: ['*.jar'])
