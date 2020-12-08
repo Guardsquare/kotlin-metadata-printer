@@ -412,7 +412,8 @@ implements   KotlinMetadataVisitor
                                                                         kotlinConstructorMetadata.flags.isPrimary));
             AtomicInteger annotationsCount = new AtomicInteger(0);
 
-            if (kotlinConstructorMetadata.flags.common.hasAnnotations)
+            if (kotlinConstructorMetadata.flags.common.hasAnnotations &&
+                kotlinConstructorMetadata.jvmSignature != null)
             {
                 pushStringBuilder();
                 Method method = clazz.findMethod(kotlinConstructorMetadata.jvmSignature.getName(),
