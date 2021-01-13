@@ -7,8 +7,11 @@ group 'com.guardsquare'
 version '1.0'
 ext.kotlinVersion = '1.3.71'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+    }
+}
 
 repositories {
     mavenLocal()
