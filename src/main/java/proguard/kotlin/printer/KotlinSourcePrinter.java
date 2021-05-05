@@ -1003,7 +1003,8 @@ implements   KotlinMetadataVisitor
         if (context.isTop())
         {
             println("/**", true);
-            println("* Kotlin " + metadataKindString + ".", true);
+            print("* Kotlin " + metadataKindString + " ", false);
+            println("(metadata version " + kotlinMetadata.mv[0] + "." + kotlinMetadata.mv[1] + "." + kotlinMetadata.mv[2] + ").", true);
             println("* From Java class: " + externalClassName(clazz.getName()), true);
             println("*/", true);
         }
