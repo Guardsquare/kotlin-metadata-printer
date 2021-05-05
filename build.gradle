@@ -41,7 +41,11 @@ dependencies {
     // Kotlin depedencies
     implementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-common:${kotlinVersion}"
-    implementation "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.1.0"
+
+    // TODO proguard-core:7.0.1 compiles against 0.1.0 but updating to 0.2.0 here
+    //      is OK because the don't write metadata. There is a breaking change
+    //      in the writers but the reader API remains the same.
+    implementation "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.2.0"
 
     implementation group: 'org.ow2.asm', name: 'asm-debug-all', version: '5.0.3'
 
