@@ -731,7 +731,10 @@ implements   KotlinMetadataVisitor
                     (_clazz, annotation) -> isExtensionFunctionType.set(true),
                 // A function type can optionally include names for the function parameters (for documentation purposes).
                 new KotlinAnnotationFilter(annotation -> annotation.kmAnnotation.getClassName().equals(NAME_KOTLIN_PARAMETER_NAME),
-                    (_clazz, annotation) -> parameterName.set(annotation.kmAnnotation.getArguments().get("name").getValue().toString()),
+                    (_clazz, annotation) -> {
+                        KmAnnotationArgument<?> name = annotation.kmAnnotation.getArguments().get("name");
+                        if (name != null) parameterName.set(name.getValue().toString());
+                    },
                 // Else print the annotation.
                 new KotlinAnnotationVisitorWrapper(
                     (i, annotation) -> {},
