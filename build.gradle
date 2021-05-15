@@ -5,7 +5,6 @@ plugins {
 
 group 'com.guardsquare'
 version '1.0'
-ext.kotlinVersion = '1.3.71'
 
 java {
     toolchain {
@@ -30,17 +29,14 @@ jar {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
     archiveName "kotlin-metadata-printer.jar"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 dependencies {
-    compile 'com.guardsquare:proguard-core:7.0.1'
+    implementation 'com.guardsquare:proguard-core:7.0.1'
 
     // dex2jar dependencies.
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    // Kotlin depedencies
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-common:${kotlinVersion}"
 
     // TODO proguard-core:7.0.1 compiles against 0.1.0 but updating to 0.2.0 here
     //      is OK because the don't write metadata. There is a breaking change
