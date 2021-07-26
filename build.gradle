@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.guardsquare:proguard-gradle:7.1.0'
+    }
+}
+
 plugins {
     id 'java'
     id 'application'
@@ -48,4 +57,56 @@ dependencies {
 
     // picocli for command line parsing.
     implementation group: 'info.picocli', name: 'picocli', version: '3.6.1'
+}
+
+def compiler = javaToolchains.compilerFor {
+    languageVersion = JavaLanguageVersion.of(8)
+}
+
+task proguard(type: proguard.gradle.ProGuardTask) {
+    dependsOn tasks.jar
+    tasks.assemble.dependsOn(it)
+
+    injars tasks.jar.outputs, filter: '**.class,META-INF/services/**,META-INF/MANIFEST.MF'
+    libraryjars configurations.findByName('compileClasspath').files - configurations.findByName('runtimeClasspath').files
+    outjars "lib/kotlin-metadata-printer.jar"
+
+    libraryjars "${compiler.get().metadata.installationPath}/jre/lib/rt.jar"
+
+    dontwarn "picocli.**"
+    dontwarn "org.xml.sax.**"
+    dontwarn "org.objectweb.asm.**"
+
+    forceprocessing
+    ignorewarnings
+    verbose
+    keep 'public class proguard.tools.KotlinMetadataPrinter {' +
+            'public static void main(java.lang.String[]);' +
+          '}'
+
+    optimizationpasses 3
+    allowaccessmodification
+    keepattributes "*Annotation*"
+
+    adaptresourcefilecontents "META-INF/MANIFEST.MF,**.properties,META-INF/services/**"
+
+    keep allowshrinking: true, 'enum picocli.** { *; }'
+
+    keepclassmembers 'class * extends java.lang.Enum {' +
+        'public static **[] values();' +
+        'public static ** valueOf(java.lang.String);' +
+    '}'
+
+    keepclassmembers 'class * {'+
+        '@picocli.CommandLine$* *;' +
+    '}'
+
+    repackageclasses 'o'
+    keep 'class kotlinx.metadata.jvm.impl.JvmMetadataExtensions { *; }'
+    keep 'class kotlinx.metadata.impl.extensions.MetadataExtensions { *; }'
+    keep 'class proguard.classfile.kotlin.visitor.AllKotlinAnnotationArgumentVisitor {*;}'
+}
+
+clean {
+    delete file('lib/kotlin-metadata-printer.jar')
 }

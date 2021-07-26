@@ -48,7 +48,7 @@ class files for processing, these are included in the libs/ folder. It requires 
 
 You can build the Kotlin metadata printer jar by executing the following Gradle command:
 
-    ./gradlew jar
+    ./gradlew assemble
 
 Once built a jar will be created in build/libs/kotlin-metadata-printer.jar
 
@@ -60,7 +60,7 @@ You can execute the printer directly through gradle as follows:
 
 Or you can execute the built printer jar as follows:
 
-    java -jar build/libs/kotlin-metadata-printer.jar input.{apk,jar,zip,class}
+    java -jar lib/kotlin-metadata-printer.jar input.{apk,jar,zip,class}
 
 ## Options
 
