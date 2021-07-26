@@ -6,10 +6,10 @@
  */
 package proguard.kotlin.printer;
 
-import kotlinx.metadata.KmAnnotation;
-import kotlinx.metadata.KmAnnotationArgument;
-import kotlinx.metadata.KmVariance;
-import proguard.classfile.*;
+import proguard.classfile.ClassPool;
+import proguard.classfile.Clazz;
+import proguard.classfile.Method;
+import proguard.classfile.TypeConstants;
 import proguard.classfile.attribute.annotation.Annotation;
 import proguard.classfile.attribute.annotation.visitor.AllAnnotationVisitor;
 import proguard.classfile.attribute.annotation.visitor.AnnotationTypeFilter;
@@ -21,19 +21,24 @@ import proguard.classfile.kotlin.flags.*;
 import proguard.classfile.kotlin.visitor.*;
 import proguard.classfile.kotlin.visitor.filter.*;
 import proguard.classfile.util.ClassUtil;
-import proguard.classfile.visitor.*;
+import proguard.classfile.visitor.ClassCounter;
+import proguard.classfile.visitor.MultiClassVisitor;
+import proguard.classfile.visitor.MultiMemberVisitor;
 import proguard.kotlin.printer.visitor.*;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.lang.System.*;
-import static java.util.Objects.*;
+import static java.lang.System.lineSeparator;
+import static java.util.Objects.requireNonNull;
 import static proguard.classfile.kotlin.KotlinConstants.*;
+import static proguard.classfile.kotlin.KotlinTypeVariance.INVARIANT;
 import static proguard.classfile.util.ClassUtil.externalClassName;
 import static proguard.classfile.util.ClassUtil.externalShortClassName;
 
@@ -114,7 +119,6 @@ implements   KotlinMetadataVisitor
                   KotlinFunctionVisitor,
                   KotlinTypeAliasVisitor,
                   KotlinPropertyVisitor,
-                  KotlinAnnotationVisitor,
                   KotlinVersionRequirementVisitor
     {
 
@@ -186,7 +190,7 @@ implements   KotlinMetadataVisitor
             kotlinClassKindMetadata.accept(clazz,
                 new MultiKotlinMetadataVisitor(
                     // First load the type parameters into the context.
-                    new AllTypeParameterVisitor(context),
+                    new KotlinClassTypeParameterVisitor(context),
                     // Including the type parameters declared in the anonymous object origin location hierarchy.
                     new KotlinClassToAnonymousObjectOriginClassVisitor(programClassPool,
                         new MultiKotlinMetadataVisitor(
@@ -194,7 +198,7 @@ implements   KotlinMetadataVisitor
                             new AllTypeParameterVisitor(context)),
                         new AllTypeParameterVisitor(context))),
                     // Then print them.
-                    new AllTypeParameterVisitor(
+                    new KotlinClassTypeParameterVisitor(
                     new KotlinTypeParameterVisitorWrapper(
                         (i, kotlinTypeParameterMetadata) -> print(i == 0 ? "<" : ", "),
                         MyKotlinSourceMetadataPrinter.this,
@@ -203,7 +207,7 @@ implements   KotlinMetadataVisitor
             pushStringBuilder();
             kotlinClassKindMetadata.constructorsAccept(clazz,
                 new KotlinConstructorFilter(
-                    constructor -> constructor.flags.isPrimary && !constructor.isParameterless(),
+                    constructor -> !constructor.flags.isSecondary && !constructor.isParameterless(),
                     MyKotlinSourceMetadataPrinter.this));
             String primaryConstructorString = popStringBuilder();
 
@@ -245,7 +249,7 @@ implements   KotlinMetadataVisitor
             {
                 println("// Secondary constructors", true);
                 kotlinClassKindMetadata.constructorsAccept(clazz,
-                    new KotlinConstructorFilter(constructor -> !constructor.flags.isPrimary,
+                    new KotlinConstructorFilter(constructor -> constructor.flags.isSecondary,
                         MyKotlinSourceMetadataPrinter.this));
             }
 
@@ -407,9 +411,9 @@ implements   KotlinMetadataVisitor
                                      KotlinConstructorMetadata kotlinConstructorMetadata)
         {
             kotlinConstructorMetadata.versionRequirementAccept(clazz, kotlinClassKindMetadata,
-                (_clazz, versionRequirement) -> printVersionRequirement(kotlinConstructorMetadata.flags.isPrimary ? " " : "",
+                (_clazz, versionRequirement) -> printVersionRequirement(!kotlinConstructorMetadata.flags.isSecondary ? " " : "",
                                                                         versionRequirement,
-                                                                        kotlinConstructorMetadata.flags.isPrimary));
+                                                                        !kotlinConstructorMetadata.flags.isSecondary));
             AtomicInteger annotationsCount = new AtomicInteger(0);
 
             if (kotlinConstructorMetadata.flags.common.hasAnnotations &&
@@ -433,27 +437,27 @@ implements   KotlinMetadataVisitor
                                   }))),
                                   new AllAttributeVisitor(
                                   new AnnotationPrinter(KotlinSourcePrinter.this,
-                                                        kotlinConstructorMetadata.flags.isPrimary))));
+                                                        !kotlinConstructorMetadata.flags.isSecondary))));
                 }
                 String annotationsString = popStringBuilder();
 
                 if (annotationsCount.get() > 0)
                 {
-                    print((kotlinConstructorMetadata.flags.isPrimary ? " " : "") + annotationsString);
+                    print((!kotlinConstructorMetadata.flags.isSecondary ? " " : "") + annotationsString);
                 }
             }
 
-            if (!kotlinConstructorMetadata.flags.isPrimary            ||
+            if (kotlinConstructorMetadata.flags.isSecondary           ||
                  kotlinConstructorMetadata.versionRequirement != null ||
                  annotationsCount.get()                   > 0)
             {
-                print(kotlinConstructorMetadata.flags.isPrimary ? " " : "", !kotlinConstructorMetadata.flags.isPrimary);
+                print(!kotlinConstructorMetadata.flags.isSecondary ? " " : "", kotlinConstructorMetadata.flags.isSecondary);
                 print("constructor");
             }
             print("(");
             kotlinConstructorMetadata.valueParametersAccept(clazz, kotlinClassKindMetadata, this);
             print(") ");
-            if (!kotlinConstructorMetadata.flags.isPrimary)
+            if (kotlinConstructorMetadata.flags.isSecondary)
             {
                 println("{ }");
             }
@@ -466,7 +470,7 @@ implements   KotlinMetadataVisitor
         public void visitAnyTypeParameter(Clazz clazz, KotlinTypeParameterMetadata kotlinTypeParameterMetadata)
         {
             // Only print in or out (invariant is default).
-            if (!KmVariance.INVARIANT.equals(kotlinTypeParameterMetadata.variance))
+            if (!INVARIANT.equals(kotlinTypeParameterMetadata.variance))
             {
                 print(kotlinTypeParameterMetadata.variance.toString().toLowerCase());
                 print(" ");
@@ -474,10 +478,7 @@ implements   KotlinMetadataVisitor
 
             print(typeParameterFlags(kotlinTypeParameterMetadata.flags));
 
-            kotlinTypeParameterMetadata.annotationsAccept(clazz, new KotlinAnnotationVisitorWrapper(
-                (i, annotation) -> {},
-                this,
-                (i, annotation) -> print(" ")));
+            kotlinTypeParameterMetadata.annotationsAccept(clazz, new KotlinAnnotationPrinter(KotlinSourcePrinter.this));
 
             print(kotlinTypeParameterMetadata.name);
 
@@ -727,19 +728,16 @@ implements   KotlinMetadataVisitor
 
             kotlinTypeMetadata.annotationsAccept(clazz,
                 // ExtensionFunctionTypes are marked by an annotation.
-                new KotlinAnnotationFilter(annotation -> annotation.kmAnnotation.getClassName().equals(NAME_KOTLIN_EXTENSION_FUNCTION),
-                    (_clazz, annotation) -> isExtensionFunctionType.set(true),
+                new KotlinAnnotationFilter(annotation -> annotation.className.equals(NAME_KOTLIN_EXTENSION_FUNCTION),
+                    (clazz1, annotatable, annotation) -> isExtensionFunctionType.set(true),
                 // A function type can optionally include names for the function parameters (for documentation purposes).
-                new KotlinAnnotationFilter(annotation -> annotation.kmAnnotation.getClassName().equals(NAME_KOTLIN_PARAMETER_NAME),
-                    (_clazz, annotation) -> {
-                        KmAnnotationArgument<?> name = annotation.kmAnnotation.getArguments().get("name");
-                        if (name != null) parameterName.set(name.getValue().toString());
-                    },
+                new KotlinAnnotationFilter(annotation -> annotation.className.equals(NAME_KOTLIN_PARAMETER_NAME),
+                    new AllKotlinAnnotationArgumentVisitor(
+                    new KotlinAnnotationArgumentFilter(argument -> argument.name.equals("name"),
+                        ((clazz1, annotatable, annotation, argument, value) -> parameterName.set(value.toString()))
+                    )),
                 // Else print the annotation.
-                new KotlinAnnotationVisitorWrapper(
-                    (i, annotation) -> {},
-                    this,
-                    (i, annotation) -> print(" ")))));
+                new KotlinAnnotationPrinter(KotlinSourcePrinter.this))));
 
             print(typeFlags(kotlinTypeMetadata.flags));
 
@@ -748,7 +746,7 @@ implements   KotlinMetadataVisitor
                 print(parameterName + ": ");
             }
 
-            if (kotlinTypeMetadata.variance != null && !kotlinTypeMetadata.variance.equals(KmVariance.INVARIANT))
+            if (kotlinTypeMetadata.variance != null && !kotlinTypeMetadata.variance.equals(INVARIANT))
             {
                 print(kotlinTypeMetadata.variance.toString().toLowerCase() + " ");
             }
@@ -881,10 +879,7 @@ implements   KotlinMetadataVisitor
                                    KotlinDeclarationContainerMetadata kotlinDeclarationContainerMetadata,
                                    KotlinTypeAliasMetadata            kotlinTypeAliasMetadata)
         {
-            kotlinTypeAliasMetadata.annotationsAccept(clazz, new KotlinAnnotationVisitorWrapper(
-                (i, annotation) -> print("", true),
-                this,
-                (i, annotation) -> print(i == kotlinTypeAliasMetadata.annotations.size() - 1 ? lineSeparator() : " ")));
+            kotlinTypeAliasMetadata.annotationsAccept(clazz, new KotlinAnnotationPrinter(KotlinSourcePrinter.this));
 
             kotlinTypeAliasMetadata.versionRequirementAccept(clazz, kotlinDeclarationContainerMetadata, this);
             print("typealias " + kotlinTypeAliasMetadata.name, true);
@@ -927,16 +922,6 @@ implements   KotlinMetadataVisitor
             print(")");
             kotlinFunctionMetadata.returnTypeAccept(clazz, kotlinMetadata, this);
             println(" { }");
-        }
-
-
-        // Implementations for KotlinAnnotationVisitor.
-
-        @Override
-        public void visitAnyAnnotation(Clazz clazz, KotlinMetadataAnnotation annotation)
-        {
-            print("@");
-            printKotlinAnnotation(annotation.kmAnnotation);
         }
 
 
@@ -1018,66 +1003,6 @@ implements   KotlinMetadataVisitor
             {
                 println("// Anonymous object origin: " + externalClassName(((KotlinClassKindMetadata) kotlinMetadata).anonymousObjectOriginName), true);
             }
-        }
-    }
-
-
-    private void printKotlinAnnotation(KmAnnotation kmAnnotation) {
-        print(context.className(kmAnnotation.getClassName(), "."));
-        print(kmAnnotation.getArguments().size() > 0 ? "(" : "");
-        int i = 0;
-        for (Map.Entry<String, KmAnnotationArgument<?>> entry : kmAnnotation.getArguments().entrySet()) {
-            String string = entry.getKey();
-            KmAnnotationArgument<?> kmAnnotationArgument = entry.getValue();
-            if (i > 0) {
-                print(", ");
-            }
-            print(string + " = ");
-            printKmAnnotationArgument(kmAnnotationArgument);
-            i++;
-        }
-        print(kmAnnotation.getArguments().size() > 0 ? ")" : "");
-    }
-
-
-    private void printKmAnnotationArgument(KmAnnotationArgument<?> kmAnnotationArgument) {
-
-        Object value = kmAnnotationArgument.getValue();
-        if (kmAnnotationArgument instanceof KmAnnotationArgument.StringValue)
-        {
-            print("\"" + kmAnnotationArgument.getValue() + "\"");
-        }
-        else if (kmAnnotationArgument instanceof KmAnnotationArgument.AnnotationValue)
-        {
-            printKotlinAnnotation((KmAnnotation) value);
-        }
-        else if (kmAnnotationArgument instanceof KmAnnotationArgument.KClassValue)
-        {
-            print(context.className(value.toString(), "."));
-        }
-        else if (kmAnnotationArgument instanceof KmAnnotationArgument.EnumValue)
-        {
-            KmAnnotationArgument.EnumValue enumValue = (KmAnnotationArgument.EnumValue) kmAnnotationArgument;
-            print(context.className(enumValue.getEnumClassName() + "." + enumValue.getEnumEntryName(), "."));
-        }
-        else if (kmAnnotationArgument instanceof KmAnnotationArgument.ArrayValue)
-        {
-            KmAnnotationArgument.ArrayValue arrayValue = (KmAnnotationArgument.ArrayValue)kmAnnotationArgument;
-            print("{");
-            List<? extends KmAnnotationArgument<?>> values = arrayValue.getValue();
-            for (int j = 0; j < values.size(); j++)
-            {
-                if (j > 0)
-                {
-                    print(", ");
-                }
-                printKmAnnotationArgument(values.get(j));
-            }
-            print("}");
-        }
-        else
-        {
-            print(value.toString());
         }
     }
 
@@ -1190,6 +1115,7 @@ implements   KotlinMetadataVisitor
            (flags.isData            ? "data "              : "") + // Also isUsualClass = true.
            (flags.isInline          ? "inline "            : "") + // Also isUsualClass = true.
            (flags.isUsualClass      ? "class "             : "") +
+           (flags.isFun             ? "fun "               : "") +
            (flags.isInterface       ? "interface "         : "") +
            (flags.isObject          ? "object "            : "") +
            (flags.isExpect          ? "expect "            : "") +

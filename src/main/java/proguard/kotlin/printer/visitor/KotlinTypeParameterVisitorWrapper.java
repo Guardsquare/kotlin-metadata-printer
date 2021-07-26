@@ -67,7 +67,7 @@ implements   KotlinTypeParameterVisitor
 
     @Override
     public void visitClassTypeParameter(Clazz                       clazz,
-                                        KotlinMetadata              kotlinMetadata,
+                                        KotlinClassKindMetadata     kotlinMetadata,
                                         KotlinTypeParameterMetadata kotlinTypeParameterMetadata)
     {
         before(kotlinTypeParameterMetadata);

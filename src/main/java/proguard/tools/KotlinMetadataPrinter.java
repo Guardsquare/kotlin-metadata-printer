@@ -33,7 +33,7 @@ import proguard.classfile.attribute.annotation.visitor.AnnotationTypeFilter;
 import proguard.classfile.attribute.visitor.AllAttributeVisitor;
 import proguard.classfile.attribute.visitor.AttributeNameFilter;
 import proguard.classfile.kotlin.*;
-import proguard.classfile.kotlin.visitor.AllFunctionsVisitor;
+import proguard.classfile.kotlin.visitor.AllFunctionVisitor;
 import proguard.classfile.kotlin.visitor.KotlinFunctionVisitor;
 import proguard.classfile.kotlin.visitor.MultiKotlinMetadataVisitor;
 import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor;
@@ -199,7 +199,7 @@ implements   Runnable
                     // Collect statistics.
                     new ReferencedKotlinMetadataVisitor(
                     new MultiKotlinMetadataVisitor(
-                    new AllFunctionsVisitor(
+                    new AllFunctionVisitor(
                     new KotlinFunctionVisitor() {
                         @Override
                         public void visitFunction(Clazz clazz, KotlinDeclarationContainerMetadata kotlinDeclarationContainerMetadata, KotlinFunctionMetadata kotlinFunctionMetadata) {

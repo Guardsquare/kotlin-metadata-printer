@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.guardsquare'
-version '1.0'
+version '1.1'
 
 java {
     toolchain {
@@ -33,15 +33,10 @@ jar {
 }
 
 dependencies {
-    implementation 'com.guardsquare:proguard-core:7.0.1'
+    implementation 'com.guardsquare:proguard-core:8.0.0'
 
     // dex2jar dependencies.
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    // TODO proguard-core:7.0.1 compiles against 0.1.0 but updating to 0.2.0 here
-    //      is OK because the don't write metadata. There is a breaking change
-    //      in the writers but the reader API remains the same.
-    implementation "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.2.0"
 
     implementation group: 'org.ow2.asm', name: 'asm-debug-all', version: '5.0.3'
 
