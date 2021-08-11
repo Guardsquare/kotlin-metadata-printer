@@ -902,7 +902,11 @@ implements   KotlinMetadataVisitor
                                      KotlinMetadata         kotlinMetadata,
                                      KotlinFunctionMetadata kotlinFunctionMetadata)
         {
-            clazz.attributesAccept(new AnnotationPrinter(KotlinSourcePrinter.this));
+            try {
+                kotlinFunctionMetadata.referencedMethodAccept(clazz, new AllAttributeVisitor(new AnnotationPrinter(KotlinSourcePrinter.this)));
+            } catch (Exception ignored) {
+                // TODO: temporary null check until ProGuardCORE 8.0.1 is released
+            }
             kotlinFunctionMetadata.versionRequirementAccept(clazz, kotlinMetadata, this);
             print(functionFlags(kotlinFunctionMetadata.flags), true);
             print("fun ");
