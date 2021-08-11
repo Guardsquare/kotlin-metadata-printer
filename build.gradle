@@ -13,7 +13,7 @@ plugins {
 }
 
 group 'com.guardsquare'
-version '1.1'
+version '1.1.1'
 
 java {
     toolchain {
@@ -63,13 +63,23 @@ def compiler = javaToolchains.compilerFor {
     languageVersion = JavaLanguageVersion.of(8)
 }
 
-task proguard(type: proguard.gradle.ProGuardTask) {
+task copyBuild(type: Copy) {
     dependsOn tasks.jar
     tasks.assemble.dependsOn(it)
 
-    injars tasks.jar.outputs, filter: '**.class,META-INF/services/**,META-INF/MANIFEST.MF'
+    from tasks.jar.outputs
+    into file("lib")
+}
+
+// TODO: proguard shrinking temporary disabled, since log4j in ProGuardCORE causes problems
+task proguard(type: proguard.gradle.ProGuardTask) {
+    dependsOn tasks.jar
+    //tasks.assemble.dependsOn(it)
+
+    injars tasks.jar.outputs, filter: '**.class,log4j2.xml,META-INF/services/**,META-INF/MANIFEST.MF'
     libraryjars configurations.findByName('compileClasspath').files - configurations.findByName('runtimeClasspath').files
-    outjars "lib/kotlin-metadata-printer.jar"
+    outjars "$buildDir/libs/kotlin-metadata-printer-shrunk.jar"
+    outputs.file("$buildDir/libs/kotlin-metadata-printer-shrunk.jar")
 
     libraryjars "${compiler.get().metadata.installationPath}/jre/lib/rt.jar"
 
@@ -105,6 +115,7 @@ task proguard(type: proguard.gradle.ProGuardTask) {
     keep 'class kotlinx.metadata.jvm.impl.JvmMetadataExtensions { *; }'
     keep 'class kotlinx.metadata.impl.extensions.MetadataExtensions { *; }'
     keep 'class proguard.classfile.kotlin.visitor.AllKotlinAnnotationArgumentVisitor {*;}'
+    keep includecode: true, 'class org.apache.logging.log4j.** { *; }'
 }
 
 clean {
