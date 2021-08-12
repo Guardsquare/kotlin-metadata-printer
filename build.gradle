@@ -13,7 +13,7 @@ plugins {
 }
 
 group 'com.guardsquare'
-version '1.1.1'
+version '1.1.2'
 
 java {
     toolchain {
@@ -42,7 +42,7 @@ jar {
 }
 
 dependencies {
-    implementation 'com.guardsquare:proguard-core:8.0.0'
+    implementation 'com.guardsquare:proguard-core:8.0.1'
 
     // dex2jar dependencies.
     implementation fileTree(dir: 'libs', include: ['*.jar'])

@@ -292,19 +292,12 @@ implements   Runnable
 
         // Initialize the other references from the program classes.
         programClassPool.classesAccept(
-            clazz -> {
-                try {
-                    clazz.accept(
-                            new ClassReferenceInitializer(programClassPool,
-                            new ClassPool(),
-                            nullWarningPrinter,
-                            nullWarningPrinter,
-                            nullWarningPrinter,
-                            null));
-                } catch (Exception ignored) {
-                    // TODO: callable reference initialization may cause NPE, will be fixed in ProGuardCORE 8.0.1
-                }
-            });
+            new ClassReferenceInitializer(programClassPool,
+                                          new ClassPool(),
+                                          nullWarningPrinter,
+                                          nullWarningPrinter,
+                                          nullWarningPrinter,
+                                          null));
     }
 
     private static String metadataKindToString(int k)
