@@ -26,8 +26,6 @@ import proguard.classfile.visitor.MultiClassVisitor;
 import proguard.classfile.visitor.MultiMemberVisitor;
 import proguard.kotlin.printer.visitor.*;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,15 +59,22 @@ implements   KotlinMetadataVisitor
 
     private final Stack<StringBuilder>          stringBuilders = new Stack<>();
     private final MyKotlinSourceMetadataPrinter printer        = new MyKotlinSourceMetadataPrinter();
-    private final Set<Clazz>                    alreadyVisited = new HashSet<>();
     private       int                           indentation;
     private       Context                       context;
+    private final boolean printEmbedded;
 
 
     public KotlinSourcePrinter(ClassPool programClassPool)
     {
-        this.programClassPool = programClassPool;
+        this(programClassPool, true);
     }
+
+    public KotlinSourcePrinter(ClassPool programClassPool, boolean printEmbedded)
+    {
+        this.programClassPool = programClassPool;
+        this.printEmbedded = printEmbedded;
+    }
+
 
     @Override
     public void visitAnyKotlinMetadata(Clazz clazz, KotlinMetadata kotlinMetadata)
@@ -79,15 +84,21 @@ implements   KotlinMetadataVisitor
             this.context = new Context();
         }
         pushStringBuilder();
-        // Inner printer gets executed, then the string is written to the visitorInfo.
-        // We only print non-synthetic classes directly; synthetic classes will be
-        // printed within non-synthetic ones. Likewise, multi-file class parts will
-        // be printed in their facades.
-        kotlinMetadata.accept(clazz,
-            new KotlinMetadataFilter(
-            _kotlinMetadata -> _kotlinMetadata.k != METADATA_KIND_SYNTHETIC_CLASS &&
-                               _kotlinMetadata.k != METADATA_KIND_MULTI_FILE_CLASS_PART,
-            KotlinSourcePrinter.this.printer));
+        KotlinMetadataVisitor printer = KotlinSourcePrinter.this.printer;
+
+        if (printEmbedded) {
+            // Inner printer gets executed, then the string is written to the visitorInfo.
+            // We only print non-synthetic classes directly; synthetic classes will be
+            // printed within non-synthetic ones. Likewise, multi-file class parts will
+            // be printed in their facades.
+            printer = new KotlinMetadataFilter(
+                    _kotlinMetadata -> _kotlinMetadata.k != METADATA_KIND_SYNTHETIC_CLASS &&
+                                       _kotlinMetadata.k != METADATA_KIND_MULTI_FILE_CLASS_PART,
+                    printer
+            );
+        }
+
+        kotlinMetadata.accept(clazz, printer);
 
         String result = popStringBuilder();
         if (result.length() > 0)
@@ -162,10 +173,6 @@ implements   KotlinMetadataVisitor
         @Override
         public void visitKotlinClassMetadata(Clazz clazz, KotlinClassKindMetadata kotlinClassKindMetadata)
         {
-            if (alreadyVisited.contains(clazz)) {
-                return;
-            }
-            alreadyVisited.add(clazz);
             context.push(new ContextFrame(clazz, kotlinClassKindMetadata));
 
             printHeader(clazz, kotlinClassKindMetadata);
@@ -336,10 +343,6 @@ implements   KotlinMetadataVisitor
         public void visitKotlinSyntheticClassMetadata(Clazz                            clazz,
                                                       KotlinSyntheticClassKindMetadata kotlinSyntheticClassKindMetadata)
         {
-            if (alreadyVisited.contains(clazz)) {
-                return;
-            }
-            alreadyVisited.add(clazz);
             context.push(new ContextFrame(clazz, kotlinSyntheticClassKindMetadata));
 
             String className = context.className(clazz, "_");
