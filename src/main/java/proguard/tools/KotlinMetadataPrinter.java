@@ -276,27 +276,16 @@ implements   Runnable
      */
     public static void initialize(ClassPool programClassPool)
     {
-        // Don't print any warnings.
-        WarningPrinter nullWarningPrinter =
-            new WarningPrinter(new PrintWriter(new OutputStream() {
-                public void write(int i) { }
-            }));
-
         // Initialize the Kotlin metadata.
-        programClassPool.classesAccept(
-                new AllAttributeVisitor(
-                new AttributeNameFilter(Attribute.RUNTIME_VISIBLE_ANNOTATIONS,
-                new AllAnnotationVisitor(
-                new AnnotationTypeFilter(KotlinConstants.TYPE_KOTLIN_METADATA,
-                new KotlinMetadataInitializer(nullWarningPrinter))))));
+        programClassPool.classesAccept(new KotlinMetadataInitializer((clazz, message) -> { }));
 
         // Initialize the other references from the program classes.
         programClassPool.classesAccept(
             new ClassReferenceInitializer(programClassPool,
                                           new ClassPool(),
-                                          nullWarningPrinter,
-                                          nullWarningPrinter,
-                                          nullWarningPrinter,
+                                          null,
+                                          null,
+                                          null,
                                           null));
     }
 
