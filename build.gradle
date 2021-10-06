@@ -122,3 +122,15 @@ task proguard(type: proguard.gradle.ProGuardTask) {
 clean {
     delete file('lib/kotlin-metadata-printer.jar')
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'com.guardsquare'
+            artifactId = 'kotlin-metadata-printer'
+
+            from components.java
+        }
+    }
+}
+
