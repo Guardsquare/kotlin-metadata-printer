@@ -158,7 +158,12 @@ implements   Runnable
                     classReader));
 
             // Parse all classes from the input and fill the classpool.
-            (new FileSource(inputFile)).pumpDataEntries(classReader);
+            DataEntryReader finalClassReader = classReader;
+            (new FileSource(inputFile)).pumpDataEntries(dataEntry -> {
+                try {
+                    finalClassReader.read(dataEntry);
+                } catch (Exception ignored) {}
+            });
 
             initialize(programClassPool);
             // Run the Kotlin printer on the classes.
