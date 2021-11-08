@@ -397,8 +397,11 @@ implements   KotlinMetadataVisitor
             context.push(new ContextFrame(clazz, kotlinMultiFilePartKindMetadata));
             printHeader(clazz, kotlinMultiFilePartKindMetadata);
             String shortClassName = externalShortClassName(context.className(clazz, "_"));
-            String jvmName        = shortClassName.substring(0, shortClassName.indexOf("__")).replaceFirst("Kt$", "");
-            println("@file:JvmName(\"" + jvmName + "\")", true);
+            int doubleUnderscoreIndex = shortClassName.indexOf("__");
+            if (doubleUnderscoreIndex != -1)
+            {
+                println("@file:JvmName(\"" + shortClassName.substring(0, doubleUnderscoreIndex).replaceFirst("Kt$", "") + "\")", true);
+            }
             println("@file:JvmMultifileClass", true);
             visitKotlinDeclarationContainerMetadata(clazz, kotlinMultiFilePartKindMetadata);
             visitChildClasses(clazz);
