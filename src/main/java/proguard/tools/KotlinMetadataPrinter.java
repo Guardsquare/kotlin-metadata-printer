@@ -47,10 +47,7 @@ import proguard.kotlin.printer.KotlinSourcePrinter;
 import proguard.util.ExtensionMatcher;
 import proguard.util.OrMatcher;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -281,6 +278,13 @@ implements   Runnable
      */
     public static void initialize(ClassPool programClassPool)
     {
+        WarningPrinter nullWarningPrinter = new WarningPrinter(new PrintWriter(
+                new OutputStream() {
+                    @Override
+                    public void write(int b) { }
+                }
+        ));
+
         // Initialize the Kotlin metadata.
         programClassPool.classesAccept(new KotlinMetadataInitializer((clazz, message) -> { }));
 
@@ -288,7 +292,7 @@ implements   Runnable
         programClassPool.classesAccept(
             new ClassReferenceInitializer(programClassPool,
                                           new ClassPool(),
-                                          null,
+                                          nullWarningPrinter,
                                           null,
                                           null,
                                           null));
