@@ -61,7 +61,7 @@ implements   KotlinMetadataVisitor
     private final MyKotlinSourceMetadataPrinter printer        = new MyKotlinSourceMetadataPrinter();
     private       int                           indentation;
     private       Context                       context;
-    private final boolean printEmbedded;
+    private final boolean excludeEmbedded;
 
 
     public KotlinSourcePrinter(ClassPool programClassPool)
@@ -69,10 +69,10 @@ implements   KotlinMetadataVisitor
         this(programClassPool, true);
     }
 
-    public KotlinSourcePrinter(ClassPool programClassPool, boolean printEmbedded)
+    public KotlinSourcePrinter(ClassPool programClassPool, boolean excludeEmbedded)
     {
         this.programClassPool = programClassPool;
-        this.printEmbedded = printEmbedded;
+        this.excludeEmbedded = excludeEmbedded;
     }
 
 
@@ -86,7 +86,7 @@ implements   KotlinMetadataVisitor
         pushStringBuilder();
         KotlinMetadataVisitor printer = KotlinSourcePrinter.this.printer;
 
-        if (printEmbedded) {
+        if (excludeEmbedded) {
             // Inner printer gets executed, then the string is written to the visitorInfo.
             // We only print non-synthetic classes directly; synthetic classes will be
             // printed within non-synthetic ones. Likewise, multi-file class parts will
