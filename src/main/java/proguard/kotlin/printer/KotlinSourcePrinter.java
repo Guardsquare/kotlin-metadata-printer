@@ -426,8 +426,8 @@ implements   KotlinMetadataVisitor
                 kotlinConstructorMetadata.jvmSignature != null)
             {
                 pushStringBuilder();
-                Method method = clazz.findMethod(kotlinConstructorMetadata.jvmSignature.getName(),
-                                                 kotlinConstructorMetadata.jvmSignature.getDesc());
+                Method method = clazz.findMethod(kotlinConstructorMetadata.jvmSignature.method,
+                                                 kotlinConstructorMetadata.jvmSignature.descriptor.toString());
                 if (method != null)
                 {
                     method.accept(clazz,
@@ -633,7 +633,7 @@ implements   KotlinMetadataVisitor
 
             if (kotlinPropertyMetadata.flags.hasConstant && kotlinPropertyMetadata.backingFieldSignature != null)
             {
-                clazz.fieldAccept(kotlinPropertyMetadata.backingFieldSignature.getName(), kotlinPropertyMetadata.backingFieldSignature.getDesc(),
+                clazz.fieldAccept(kotlinPropertyMetadata.backingFieldSignature.memberName, kotlinPropertyMetadata.backingFieldSignature.descriptor.toString(),
                     new AllAttributeVisitor(
                     new AttributeConstantVisitor(
                     new ConstantToStringVisitor((constant) -> print(" = " + constant)))));
@@ -648,12 +648,12 @@ implements   KotlinMetadataVisitor
                 {
                     // If the types are invalid this will throw an exception.
                     print(ClassUtil.externalFullFieldDescription(0,
-                            kotlinPropertyMetadata.backingFieldSignature.getName(),
-                            kotlinPropertyMetadata.backingFieldSignature.getDesc()));
+                            kotlinPropertyMetadata.backingFieldSignature.memberName,
+                            kotlinPropertyMetadata.backingFieldSignature.descriptor.toString()));
                 }
                 catch (IllegalArgumentException e)
                 {
-                    print("invalid field descriptor: " + kotlinPropertyMetadata.backingFieldSignature.asString());
+                    print("invalid field descriptor: " + kotlinPropertyMetadata.backingFieldSignature);
                 }
                 outdent();
             }
