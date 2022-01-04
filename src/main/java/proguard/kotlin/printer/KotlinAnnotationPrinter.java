@@ -12,6 +12,8 @@ import proguard.classfile.kotlin.*;
 import proguard.classfile.kotlin.visitor.KotlinAnnotationArgumentVisitor;
 import proguard.classfile.kotlin.visitor.KotlinAnnotationVisitor;
 
+import java.util.Collections;
+
 import static proguard.classfile.kotlin.KotlinAnnotationArgument.*;
 
 /**
@@ -116,6 +118,38 @@ implements   KotlinAnnotationVisitor,
 
 
     @Override
+    public void visitUByteArgument(Clazz clazz, KotlinAnnotatable annotatable, KotlinAnnotation annotation, KotlinAnnotationArgument argument, UByteValue value)
+    {
+        visitAnyArgument(clazz, annotatable, annotation, argument, value);
+        printer.print(String.valueOf(Byte.toUnsignedInt(value.value)));
+    }
+
+
+    @Override
+    public void visitUShortArgument(Clazz clazz, KotlinAnnotatable annotatable, KotlinAnnotation annotation, KotlinAnnotationArgument argument, UShortValue value)
+    {
+        visitAnyArgument(clazz, annotatable, annotation, argument, value);
+        printer.print(String.valueOf(Short.toUnsignedInt(value.value)));
+    }
+
+
+    @Override
+    public void visitUIntArgument(Clazz clazz, KotlinAnnotatable annotatable, KotlinAnnotation annotation, KotlinAnnotationArgument argument, UIntValue value)
+    {
+        visitAnyArgument(clazz, annotatable, annotation, argument, value);
+        printer.print(Integer.toUnsignedString(value.value));
+    }
+
+
+    @Override
+    public void visitULongArgument(Clazz clazz, KotlinAnnotatable annotatable, KotlinAnnotation annotation, KotlinAnnotationArgument argument, ULongValue value)
+    {
+        visitAnyArgument(clazz, annotatable, annotation, argument, value);
+        printer.print(Long.toUnsignedString(value.value));
+    }
+
+
+    @Override
     public void visitArrayArgument(Clazz                    clazz,
                                    KotlinAnnotatable        annotatable,
                                    KotlinAnnotation         annotation,
@@ -149,7 +183,13 @@ implements   KotlinAnnotationVisitor,
                                    KotlinAnnotationArgument.ClassValue value)
     {
         visitAnyArgument(clazz, annotatable, annotation, argument, value);
-        printer.print(printer.getContext().className(value.className, "."));
+        String className = printer.getContext().className(value.className, ".");
+        printer.print(
+            String.join("", Collections.nCopies(value.arrayDimensionsCount, "Array<")) +
+            className +
+            String.join("", Collections.nCopies(value.arrayDimensionsCount, ">")) +
+            "::class"
+        );
     }
 
 

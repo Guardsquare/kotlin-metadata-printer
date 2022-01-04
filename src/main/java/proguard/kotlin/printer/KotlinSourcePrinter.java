@@ -260,6 +260,15 @@ implements   KotlinMetadataVisitor
                         MyKotlinSourceMetadataPrinter.this));
             }
 
+            if (kotlinClassKindMetadata.flags.isValue)
+            {
+                println("// Underlying property name: " + kotlinClassKindMetadata.underlyingPropertyName, true);
+                pushStringBuilder();
+                kotlinClassKindMetadata.inlineClassUnderlyingPropertyTypeAccept(clazz, MyKotlinSourceMetadataPrinter.this);
+                String underlyingPropertyType = popStringBuilder();
+                println("// Underlying property type: " + underlyingPropertyType, true);
+            }
+
             visitKotlinDeclarationContainerMetadata(clazz, kotlinClassKindMetadata);
 
             // Companion is also a nested class but print it here first, so it's not mixed in with the nested classes.
@@ -1119,7 +1128,7 @@ implements   KotlinMetadataVisitor
            (flags.isAnnotationClass ? "annotation class "  : "") +
            (flags.isInner           ? "inner "             : "") + // Also isUsualClass = true.
            (flags.isData            ? "data "              : "") + // Also isUsualClass = true.
-           (flags.isInline          ? "inline "            : "") + // Also isUsualClass = true.
+           (flags.isValue           ? "value "             : (flags.isInline ? "inline " : "")) + // Also isUsualClass = true.
            (flags.isUsualClass      ? "class "             : "") +
            (flags.isFun             ? "fun "               : "") +
            (flags.isInterface       ? "interface "         : "") +
