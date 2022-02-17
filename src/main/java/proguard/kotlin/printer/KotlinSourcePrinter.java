@@ -667,6 +667,20 @@ implements   KotlinMetadataVisitor
                 outdent();
             }
 
+
+            if (kotlinPropertyMetadata.syntheticMethodForDelegate != null)
+            {
+                indent();
+                println();
+                print("// Synthetic method for delegate: ", true);
+                print(ClassUtil.externalFullMethodDescription(
+                        clazz.getName(),
+                        kotlinPropertyMetadata.referencedSyntheticMethodForDelegateMethod.getAccessFlags(),
+                        kotlinPropertyMetadata.referencedSyntheticMethodForDelegateMethod.getName(clazz),
+                        kotlinPropertyMetadata.referencedSyntheticMethodForDelegateMethod.getDescriptor(clazz)));
+                outdent();
+            }
+
             if (kotlinPropertyMetadata.flags.hasGetter)
             {
                 indent();
@@ -1137,7 +1151,10 @@ implements   KotlinMetadataVisitor
            (flags.isExternal        ? "external "          : "") +
            (flags.isCompanionObject ? "companion object "  : "") +
            (flags.isEnumEntry       ? "enum entry "        : "") +
-           (flags.isEnumClass       ? "enum class "        : "");
+           (flags.isEnumClass       ? "enum class "        : "") +
+           // JVM specific flags
+           (flags.isCompiledInCompatibilityMode ? "/* compiledInCompatibilityMode */ " : "") +
+           (flags.hasMethodBodiesInInterface    ? "/* hasMethodBodiesInInterface */"  : "");
     }
 
 
