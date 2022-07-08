@@ -1126,7 +1126,7 @@ implements   KotlinMetadataVisitor
     private String visibilityFlags(KotlinVisibilityFlags flags)
     {
         return
-            (flags.isInternal      ? ""           : "") +
+            (flags.isInternal      ? "internal "  : "") +
             (flags.isPrivate       ? "private "   : "") +
             (flags.isPublic        ? ""           : "") + //default
             (flags.isProtected     ? "protected " : "") +
