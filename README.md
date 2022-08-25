@@ -39,11 +39,6 @@ The Kotlin metadata printer is integrated in [ProGuard Playground](https://playg
   <img src="./screenshot.png" alt="demo of printer GUI"/>
 </a>
 
-## Dependencies
-
-As ProGuard works only with Java class files the tool uses the free dex2jar library to convert the dex files to
-class files for processing, these are included in the libs/ folder. It requires a Java Runtime Environment (JRE 1.8 or higher).
-
 ## Building
 
 You can build the Kotlin metadata printer jar by executing the following Gradle command:
@@ -116,4 +111,4 @@ the [Apache License Version 2.0](LICENSE).
 
 Enjoy!
 
-Copyright (c) 2002-2020 Guardsquare NV
+Copyright (c) 2002-2022 Guardsquare NV

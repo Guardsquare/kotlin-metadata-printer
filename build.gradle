@@ -25,6 +25,7 @@ java {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 application {
@@ -43,12 +44,8 @@ jar {
 }
 
 dependencies {
-    implementation 'com.guardsquare:proguard-core:8.0.7'
-
-    // dex2jar dependencies.
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    implementation group: 'org.ow2.asm', name: 'asm-debug-all', version: '5.0.3'
+    // TODO: replace with maven central dependency when dex support released
+    implementation 'com.github.Guardsquare:proguard-core:61e5b39485'
 
     // For some string utils.
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'

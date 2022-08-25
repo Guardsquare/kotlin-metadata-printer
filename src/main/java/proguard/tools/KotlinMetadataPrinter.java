@@ -64,7 +64,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
          parameterListHeading = "%nParameters:%n",
          optionListHeading    = "%nOptions:%n",
          header               = "\nKotlin metadata printer, built on the ProGuard Core library.\n",
-         footer               = "\nCopyright (c) 2002-2020 Guardsquare NV.")
+         footer               = "\nCopyright (c) 2002-2022 Guardsquare NV.")
 public class KotlinMetadataPrinter
 implements   Runnable
 {
@@ -127,16 +127,16 @@ implements   Runnable
             String internalClassNameFilter = classNameFilter == null ? "**" :
                                              ClassUtil.internalClassName(classNameFilter);
 
+            ClassPoolFiller classPoolFiller = new ClassPoolFiller(programClassPool);
             DataEntryReader classReader =
                 new NameFilteredDataEntryReader("**.class",
                 new ClassReader(false, false, false, false, null,
-                new ClassPoolFiller(programClassPool)));
+                        classPoolFiller));
 
             // Convert dex files to a JAR first.
             classReader =
                 new NameFilteredDataEntryReader("classes*.dex",
-                new Dex2JarReader(false,
-                    classReader),
+                new DexClassReader(false, classPoolFiller),
                 classReader);
 
             // Extract files from an archive if necessary.
