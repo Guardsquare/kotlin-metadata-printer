@@ -102,7 +102,11 @@ implements   KotlinTypeParameterVisitor
             }
             else if (kotlinMetadata.k == METADATA_KIND_FILE_FACADE)
             {
-                result = result.replaceFirst("^" + contextItem.clazz.getName() + ".", "");
+                String fileFacadeClazzName = contextItem.clazz.getName();
+                if (className.startsWith(fileFacadeClazzName + "$"))
+                {
+                    result = result.replace(fileFacadeClazzName + "$", "");
+                }
             }
         }
 
