@@ -241,7 +241,7 @@ implements   KotlinMetadataVisitor
                 (i, _kotlinTypeMetadata) -> print(i == 0 ? "context(" : ", ", true),
                 this,
                 (i, _kotlinTypeMetadata) -> {
-                    if (i == kotlinClassKindMetadata.contextReceivers.size() - 1) println(")"); else print("");
+                    if (i == kotlinClassKindMetadata.contextReceivers.size() - 1) println(")");
                 }));
 
             String className = context.className(clazz, "_");
@@ -691,7 +691,7 @@ implements   KotlinMetadataVisitor
                 (i, _kotlinTypeMetadata) -> print(i == 0 ? "context(" : ", ", true),
                 this,
                 (i, _kotlinTypeMetadata) -> {
-                    if (i == kotlinPropertyMetadata.contextReceivers.size() - 1) println(")"); else print("");
+                    if (i == kotlinPropertyMetadata.contextReceivers.size() - 1) println(")");
                 }));
 
             print(propertyFlags(kotlinPropertyMetadata.flags), true);
@@ -1006,7 +1006,7 @@ implements   KotlinMetadataVisitor
                 (i, _kotlinTypeMetadata) -> print(i == 0 ? "context(" : ", ", true),
                 this,
                 (i, _kotlinTypeMetadata) -> {
-                    if (i == kotlinFunctionMetadata.contextReceivers.size() - 1) println(")"); else print("");
+                    if (i == kotlinFunctionMetadata.contextReceivers.size() - 1) println(")");
                 }));
             print(functionFlags(kotlinFunctionMetadata.flags), true);
             print("fun ");
