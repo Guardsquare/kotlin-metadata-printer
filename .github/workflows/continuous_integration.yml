@@ -23,7 +23,7 @@ jobs:
       run: ./gradlew build
 
     - name: Store artifact
-    - uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3
       with:
         name: kotlin-metadata-printer.jar
         path: lib/kotlin-metadata-printer.jar
