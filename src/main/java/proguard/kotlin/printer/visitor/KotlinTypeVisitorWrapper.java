@@ -337,4 +337,14 @@ implements KotlinTypeVisitor
                                                       expandedType);
         after(expandedType);
     }
+
+    @Override
+    public void visitAnyContextReceiverType(Clazz clazz, KotlinMetadata kotlinMetadata, KotlinTypeMetadata kotlinTypeMetadata)
+    {
+        before(kotlinTypeMetadata);
+        this.kotlinTypeVisitor.visitAnyContextReceiverType(
+            clazz, kotlinMetadata, kotlinTypeMetadata
+        );
+        after(kotlinTypeMetadata);
+    }
 }
