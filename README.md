@@ -95,9 +95,34 @@ class HelloWorldActivity : android.support.v7.app.AppCompatActivity {
 }
 ```
 
+## Using as a library
+
+The project is split into CLI (`kmp-cli`) and library (`kmp-lib`) modules. To use the 
+printer programmatically from your project add a dependency on the library and then use 
+the `KotlinMetadataPrinter` class along with a ProGuardCORE `ClassPool`. The printed 
+metadata is placed into the processing info field of the `Clazz`.
+
+```java
+import static proguard.io.util.IOUtil.read;
+
+public class Main
+{
+    public static void main(String[] args)
+    {
+        ClassPool programClassPool = IOUtil.read(args[0], false);
+        programClassPool.classesAccept(
+            new ReferencedKotlinMetadataVisitor(
+            new KotlinMetadataPrinter(programClassPool))
+        );
+
+        programClassPool.classesAccept(clazz -> System.out.println(clazz.getProcessingInfo()));
+    }
+}
+```
+
 ## Contributing
 
-The **Kotlin metadata printer** is build on the
+The **Kotlin metadata printer** is built on the
 [ProGuardCORE](https://github.com/Guardsquare/proguard-core) library.
 
 Contributions, issues and feature requests are welcome in both projects.
