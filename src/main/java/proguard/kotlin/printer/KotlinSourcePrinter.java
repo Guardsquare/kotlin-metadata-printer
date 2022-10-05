@@ -2,7 +2,7 @@
  * ProGuard -- shrinking, optimization, obfuscation, and preverification
  *             of Java bytecode.
  *
- * Copyright (c) 2002-2021 Guardsquare NV
+ * Copyright (c) 2002-2022 Guardsquare NV
  */
 package proguard.kotlin.printer;
 
@@ -16,15 +16,61 @@ import proguard.classfile.attribute.annotation.visitor.AnnotationTypeFilter;
 import proguard.classfile.attribute.annotation.visitor.AnnotationVisitor;
 import proguard.classfile.attribute.visitor.AllAttributeVisitor;
 import proguard.classfile.attribute.visitor.AttributeConstantVisitor;
-import proguard.classfile.kotlin.*;
-import proguard.classfile.kotlin.flags.*;
-import proguard.classfile.kotlin.visitor.*;
-import proguard.classfile.kotlin.visitor.filter.*;
+import proguard.classfile.kotlin.KotlinClassKindMetadata;
+import proguard.classfile.kotlin.KotlinConstants;
+import proguard.classfile.kotlin.KotlinConstructorMetadata;
+import proguard.classfile.kotlin.KotlinDeclarationContainerMetadata;
+import proguard.classfile.kotlin.KotlinFileFacadeKindMetadata;
+import proguard.classfile.kotlin.KotlinFunctionMetadata;
+import proguard.classfile.kotlin.KotlinMetadata;
+import proguard.classfile.kotlin.KotlinMultiFileFacadeKindMetadata;
+import proguard.classfile.kotlin.KotlinMultiFilePartKindMetadata;
+import proguard.classfile.kotlin.KotlinPropertyMetadata;
+import proguard.classfile.kotlin.KotlinSyntheticClassKindMetadata;
+import proguard.classfile.kotlin.KotlinTypeAliasMetadata;
+import proguard.classfile.kotlin.KotlinTypeMetadata;
+import proguard.classfile.kotlin.KotlinTypeParameterMetadata;
+import proguard.classfile.kotlin.KotlinValueParameterMetadata;
+import proguard.classfile.kotlin.KotlinVersionRequirementMetadata;
+import proguard.classfile.kotlin.flags.KotlinClassFlags;
+import proguard.classfile.kotlin.flags.KotlinEffectExpressionFlags;
+import proguard.classfile.kotlin.flags.KotlinFunctionFlags;
+import proguard.classfile.kotlin.flags.KotlinModalityFlags;
+import proguard.classfile.kotlin.flags.KotlinPropertyAccessorFlags;
+import proguard.classfile.kotlin.flags.KotlinPropertyFlags;
+import proguard.classfile.kotlin.flags.KotlinTypeFlags;
+import proguard.classfile.kotlin.flags.KotlinTypeParameterFlags;
+import proguard.classfile.kotlin.flags.KotlinValueParameterFlags;
+import proguard.classfile.kotlin.flags.KotlinVisibilityFlags;
+import proguard.classfile.kotlin.visitor.AllKotlinAnnotationArgumentVisitor;
+import proguard.classfile.kotlin.visitor.AllTypeParameterVisitor;
+import proguard.classfile.kotlin.visitor.KotlinClassToAnonymousObjectOriginClassVisitor;
+import proguard.classfile.kotlin.visitor.KotlinClassToInlineOriginFunctionVisitor;
+import proguard.classfile.kotlin.visitor.KotlinConstructorVisitor;
+import proguard.classfile.kotlin.visitor.KotlinFunctionVisitor;
+import proguard.classfile.kotlin.visitor.KotlinMetadataVisitor;
+import proguard.classfile.kotlin.visitor.KotlinPropertyVisitor;
+import proguard.classfile.kotlin.visitor.KotlinTypeAliasVisitor;
+import proguard.classfile.kotlin.visitor.KotlinTypeParameterVisitor;
+import proguard.classfile.kotlin.visitor.KotlinTypeVisitor;
+import proguard.classfile.kotlin.visitor.KotlinValueParameterVisitor;
+import proguard.classfile.kotlin.visitor.KotlinVersionRequirementVisitor;
+import proguard.classfile.kotlin.visitor.MultiKotlinMetadataVisitor;
+import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor;
+import proguard.classfile.kotlin.visitor.filter.KotlinAnnotationArgumentFilter;
+import proguard.classfile.kotlin.visitor.filter.KotlinAnnotationFilter;
+import proguard.classfile.kotlin.visitor.filter.KotlinConstructorFilter;
+import proguard.classfile.kotlin.visitor.filter.KotlinMetadataFilter;
+import proguard.classfile.kotlin.visitor.filter.KotlinTypeFilter;
 import proguard.classfile.util.ClassUtil;
 import proguard.classfile.visitor.ClassCounter;
 import proguard.classfile.visitor.MultiClassVisitor;
 import proguard.classfile.visitor.MultiMemberVisitor;
-import proguard.kotlin.printer.visitor.*;
+import proguard.kotlin.printer.visitor.ConstantToStringVisitor;
+import proguard.kotlin.printer.visitor.KotlinClassTypeParameterVisitor;
+import proguard.kotlin.printer.visitor.KotlinMetadataVisitorWrapper;
+import proguard.kotlin.printer.visitor.KotlinTypeParameterVisitorWrapper;
+import proguard.kotlin.printer.visitor.KotlinTypeVisitorWrapper;
 
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,7 +81,16 @@ import java.util.regex.Pattern;
 
 import static java.lang.System.lineSeparator;
 import static java.util.Objects.requireNonNull;
-import static proguard.classfile.kotlin.KotlinConstants.*;
+import static proguard.classfile.kotlin.KotlinConstants.METADATA_KIND_CLASS;
+import static proguard.classfile.kotlin.KotlinConstants.METADATA_KIND_MULTI_FILE_CLASS_PART;
+import static proguard.classfile.kotlin.KotlinConstants.METADATA_KIND_SYNTHETIC_CLASS;
+import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_ANY;
+import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_ENUM;
+import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_EXTENSION_FUNCTION;
+import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_FUNCTION;
+import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_PARAMETER_NAME;
+import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_UNIT;
+import static proguard.classfile.kotlin.KotlinConstants.metadataKindToString;
 import static proguard.classfile.kotlin.KotlinTypeVariance.INVARIANT;
 import static proguard.classfile.util.ClassUtil.externalClassName;
 import static proguard.classfile.util.ClassUtil.externalShortClassName;
@@ -43,7 +98,7 @@ import static proguard.classfile.util.ClassUtil.externalShortClassName;
 /**
  * Prints the Kotlin metadata annotation in a format similar to
  * Kotlin source code.
- *
+ * <p>
  * The printed metadata is written to the class processingInfo field.
  *
  * @author James Hamilton
@@ -181,6 +236,13 @@ implements   KotlinMetadataVisitor
 
             kotlinClassKindMetadata.versionRequirementAccept(clazz,
                 (_clazz, versionRequirement) -> printVersionRequirement(versionRequirement));
+
+            kotlinClassKindMetadata.contextReceiverTypesAccept(clazz, new KotlinTypeVisitorWrapper(
+                (i, _kotlinTypeMetadata) -> print(i == 0 ? "context(" : ", ", true),
+                this,
+                (i, _kotlinTypeMetadata) -> {
+                    if (i == kotlinClassKindMetadata.contextReceivers.size() - 1) println(")");
+                }));
 
             String className = context.className(clazz, "_");
 
@@ -624,6 +686,14 @@ implements   KotlinMetadataVisitor
             }
 
             kotlinPropertyMetadata.versionRequirementAccept(clazz, kotlinDeclarationContainerMetadata, this);
+
+            kotlinPropertyMetadata.contextReceiverTypesAccept(clazz, kotlinDeclarationContainerMetadata, new KotlinTypeVisitorWrapper(
+                (i, _kotlinTypeMetadata) -> print(i == 0 ? "context(" : ", ", true),
+                this,
+                (i, _kotlinTypeMetadata) -> {
+                    if (i == kotlinPropertyMetadata.contextReceivers.size() - 1) println(")");
+                }));
+
             print(propertyFlags(kotlinPropertyMetadata.flags), true);
 
             kotlinPropertyMetadata.typeParametersAccept(clazz, kotlinDeclarationContainerMetadata, context);
@@ -887,7 +957,6 @@ implements   KotlinMetadataVisitor
             print(isFunctionType ? ")." : ".");
         }
 
-
         @Override
         public void visitFunctionReturnType(Clazz                  clazz,
                                             KotlinMetadata         kotlinMetadata,
@@ -931,8 +1000,14 @@ implements   KotlinMetadataVisitor
                                      KotlinMetadata         kotlinMetadata,
                                      KotlinFunctionMetadata kotlinFunctionMetadata)
         {
-            kotlinFunctionMetadata.referencedMethodAccept(clazz, new AllAttributeVisitor(new AnnotationPrinter(KotlinSourcePrinter.this)));
+            kotlinFunctionMetadata.referencedMethodAccept(new AllAttributeVisitor(new AnnotationPrinter(KotlinSourcePrinter.this)));
             kotlinFunctionMetadata.versionRequirementAccept(clazz, kotlinMetadata, this);
+            kotlinFunctionMetadata.contextReceiverTypesAccept(clazz, kotlinMetadata, new KotlinTypeVisitorWrapper(
+                (i, _kotlinTypeMetadata) -> print(i == 0 ? "context(" : ", ", true),
+                this,
+                (i, _kotlinTypeMetadata) -> {
+                    if (i == kotlinFunctionMetadata.contextReceivers.size() - 1) println(")");
+                }));
             print(functionFlags(kotlinFunctionMetadata.flags), true);
             print("fun ");
             kotlinFunctionMetadata.typeParametersAccept(clazz, kotlinMetadata, context);

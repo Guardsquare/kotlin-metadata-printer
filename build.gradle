@@ -10,7 +10,10 @@ buildscript {
 plugins {
     id 'java'
     id 'application'
+    id 'java-test-fixtures'
     id 'maven-publish'
+    id "org.jetbrains.kotlin.jvm" version "1.7.20"
+    id "org.jlleitschuh.gradle.ktlint" version '10.2.1'
 }
 
 group 'com.guardsquare'
@@ -43,9 +46,13 @@ jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
+test {
+    useJUnitPlatform()
+}
+
 dependencies {
     // TODO: replace with maven central dependency when dex support released
-    implementation 'com.github.Guardsquare:proguard-core:61e5b39485'
+    implementation 'com.github.Guardsquare:proguard-core:4273954d97fe57893f9e02eee43d3781b5cc8726'
 
     // For some string utils.
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
@@ -55,6 +62,16 @@ dependencies {
 
     // picocli for command line parsing.
     implementation group: 'info.picocli', name: 'picocli', version: '3.6.1'
+
+    testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.20"
+    testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.7.20"
+    testImplementation 'com.github.tschuchortdev:kotlin-compile-testing:1.4.9'
+    testImplementation 'io.kotest:kotest-runner-junit5-jvm:5.4.2' // for kotest framework
+    testImplementation 'io.kotest:kotest-assertions-core-jvm:5.4.2' // for kotest core jvm assertions
+    testImplementation 'io.kotest:kotest-property-jvm:5.4.2' // for kotest property test
+    testImplementation 'io.mockk:mockk:1.12.8' // for mocking
+
+    testImplementation(testFixtures("com.guardsquare:proguard-core:9.0.4"))
 }
 
 def compiler = javaToolchains.compilerFor {
