@@ -43,6 +43,35 @@ publishing {
             groupId = 'com.guardsquare'
             artifactId = 'kotlin-metadata-printer'
             version = version
+            pom {
+                name = "Kotlin Metadata Printer"
+                description = "A tool for printing Kotlin metadata attached to Java class files in readable form, based on ProGuardCORE."
+                url = "https://github.com/Guardsquare/kotlin-metadata-printer"
+                licenses {
+                    license {
+                        name = 'Apache License Version 2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution = 'repo'
+                    }
+                }
+                issueManagement {
+                    system = 'Github Tracker'
+                    url = 'https://github.com/Guardsquare/kotlin-metadata-printer/issues'
+                }
+                scm {
+                    url = 'https://github.com/Guardsquare/kotlin-metadata-printer.git'
+                    connection = 'scm:git:https://github.com/Guardsquare/kotlin-metadata-printer.git'
+                }
+                developers {
+                    developer {
+                        id = 'james.hamilton'
+                        name = 'James Hamilton'
+                        organization = 'Guardsquare'
+                        organizationUrl = 'https://www.guardsquare.com/'
+                        roles = ['Project Administrator', 'Developer']
+                    }
+                }
+            }
 
             from components.java
 
