@@ -19,7 +19,7 @@ java {
 }
 
 application {
-    mainClassName = 'com.guardsquare.proguard.tools.KotlinMetadataPrinterCli'
+    mainClassName = 'com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinterCli'
 }
 
 jar {

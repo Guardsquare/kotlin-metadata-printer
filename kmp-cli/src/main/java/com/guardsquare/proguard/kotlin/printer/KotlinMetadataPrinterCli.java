@@ -16,9 +16,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.guardsquare.proguard.tools;
+package com.guardsquare.proguard.kotlin.printer;
 
-import com.guardsquare.proguard.kotlin.printer.KotlinMetadataSourcePrinter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.json.JSONObject;
