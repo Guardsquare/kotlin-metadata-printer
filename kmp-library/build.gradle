@@ -5,6 +5,7 @@ plugins {
     id 'maven-publish'
     id "org.jlleitschuh.gradle.ktlint" version '10.2.1'
     id "org.jetbrains.kotlin.jvm" version "1.7.20"
+    id 'signing'
 }
 
 java {
@@ -33,12 +34,24 @@ dependencies {
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
+        mavenJava(MavenPublication) { publication ->
             groupId = 'com.guardsquare'
             artifactId = 'kotlin-metadata-printer'
             version = version
 
             from components.java
+
+            if (project.hasProperty('PROGUARD_SIGNING_KEY')) {
+                // We use in-memory ascii-armored keys
+                // See https://docs.gradle.org/current/userguide/signing_plugin.html#sec:in-memory-keys
+                signing {
+                    String key = project.findProperty('PROGUARD_SIGNING_KEY')
+                    String password = project.findProperty('PROGUARD_SIGNING_PASSWORD')
+                    useInMemoryPgpKeys(key, password)
+                    sign publication
+                }
+            }
         }
     }
 }
+
