@@ -1,2 +1,4 @@
 rootProject.name = 'KotlinMetadataPrinter'
+include 'kmp-cli'
+include 'kmp-library'
 

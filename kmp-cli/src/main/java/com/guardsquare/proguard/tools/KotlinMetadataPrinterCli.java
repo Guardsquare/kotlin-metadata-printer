@@ -2,7 +2,7 @@
  * Kotlin metadata printer -- tool to display the Kotlin metadata
  * from Java class files.
  *
- * Copyright (c) 2002-2020 Guardsquare NV
+ * Copyright (c) 2002-2022 Guardsquare NV
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package proguard.tools;
+package com.guardsquare.proguard.tools;
 
+import com.guardsquare.proguard.kotlin.printer.KotlinMetadataSourcePrinter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.json.JSONObject;
@@ -27,12 +28,11 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import proguard.classfile.ClassPool;
 import proguard.classfile.Clazz;
-import proguard.classfile.attribute.Attribute;
-import proguard.classfile.attribute.annotation.visitor.AllAnnotationVisitor;
-import proguard.classfile.attribute.annotation.visitor.AnnotationTypeFilter;
-import proguard.classfile.attribute.visitor.AllAttributeVisitor;
-import proguard.classfile.attribute.visitor.AttributeNameFilter;
-import proguard.classfile.kotlin.*;
+import proguard.classfile.kotlin.KotlinConstants;
+import proguard.classfile.kotlin.KotlinDeclarationContainerMetadata;
+import proguard.classfile.kotlin.KotlinFunctionMetadata;
+import proguard.classfile.kotlin.KotlinMetadata;
+import proguard.classfile.kotlin.KotlinSyntheticClassKindMetadata;
 import proguard.classfile.kotlin.visitor.AllFunctionVisitor;
 import proguard.classfile.kotlin.visitor.KotlinFunctionVisitor;
 import proguard.classfile.kotlin.visitor.MultiKotlinMetadataVisitor;
@@ -41,13 +41,25 @@ import proguard.classfile.util.ClassReferenceInitializer;
 import proguard.classfile.util.ClassUtil;
 import proguard.classfile.util.WarningPrinter;
 import proguard.classfile.util.kotlin.KotlinMetadataInitializer;
-import proguard.classfile.visitor.*;
-import proguard.io.*;
-import proguard.kotlin.printer.KotlinSourcePrinter;
+import proguard.classfile.visitor.ClassCounter;
+import proguard.classfile.visitor.ClassPoolFiller;
+import proguard.classfile.visitor.ClassProcessingInfoFilter;
+import proguard.classfile.visitor.MultiClassVisitor;
+import proguard.io.ClassReader;
+import proguard.io.DataEntryNameFilter;
+import proguard.io.DataEntryReader;
+import proguard.io.DexClassReader;
+import proguard.io.FileSource;
+import proguard.io.FilteredDataEntryReader;
+import proguard.io.JarReader;
+import proguard.io.NameFilteredDataEntryReader;
 import proguard.util.ExtensionMatcher;
 import proguard.util.OrMatcher;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -65,7 +77,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
          optionListHeading    = "%nOptions:%n",
          header               = "\nKotlin metadata printer, built on the ProGuard Core library.\n",
          footer               = "\nCopyright (c) 2002-2022 Guardsquare NV.")
-public class KotlinMetadataPrinter
+public class KotlinMetadataPrinterCli
 implements   Runnable
 {
     @SuppressWarnings("FieldMayBeFinal")
@@ -120,7 +132,7 @@ implements   Runnable
                  new ReferencedKotlinMetadataVisitor(
                  new MultiKotlinMetadataVisitor(
                      (clazz, kotlinMetadata) -> kotlinMetadataCount++,
-                     new KotlinSourcePrinter(programClassPool))));
+                     new KotlinMetadataSourcePrinter(programClassPool))));
 
             // Construct reader.
             // -----------------
@@ -307,6 +319,6 @@ implements   Runnable
 
     public static void main(String[] args)
     {
-        CommandLine.run(new KotlinMetadataPrinter(), System.out, args);
+        CommandLine.run(new KotlinMetadataPrinterCli(), System.out, args);
     }
 }

@@ -4,8 +4,16 @@
  *
  * Copyright (c) 2002-2022 Guardsquare NV
  */
-package proguard.kotlin.printer;
+package com.guardsquare.proguard.kotlin.printer;
 
+import com.guardsquare.proguard.kotlin.printer.internal.AnnotationPrinter;
+import com.guardsquare.proguard.kotlin.printer.internal.Context;
+import com.guardsquare.proguard.kotlin.printer.internal.ContextFrame;
+import com.guardsquare.proguard.kotlin.printer.internal.KotlinAnnotationPrinter;
+import com.guardsquare.proguard.kotlin.printer.internal.visitor.ConstantToStringVisitor;
+import com.guardsquare.proguard.kotlin.printer.internal.visitor.KotlinClassTypeParameterVisitor;
+import com.guardsquare.proguard.kotlin.printer.internal.visitor.KotlinMetadataVisitorWrapper;
+import com.guardsquare.proguard.kotlin.printer.internal.visitor.KotlinTypeParameterVisitorWrapper;
 import proguard.classfile.ClassPool;
 import proguard.classfile.Clazz;
 import proguard.classfile.Method;
@@ -16,22 +24,7 @@ import proguard.classfile.attribute.annotation.visitor.AnnotationTypeFilter;
 import proguard.classfile.attribute.annotation.visitor.AnnotationVisitor;
 import proguard.classfile.attribute.visitor.AllAttributeVisitor;
 import proguard.classfile.attribute.visitor.AttributeConstantVisitor;
-import proguard.classfile.kotlin.KotlinClassKindMetadata;
-import proguard.classfile.kotlin.KotlinConstants;
-import proguard.classfile.kotlin.KotlinConstructorMetadata;
-import proguard.classfile.kotlin.KotlinDeclarationContainerMetadata;
-import proguard.classfile.kotlin.KotlinFileFacadeKindMetadata;
-import proguard.classfile.kotlin.KotlinFunctionMetadata;
-import proguard.classfile.kotlin.KotlinMetadata;
-import proguard.classfile.kotlin.KotlinMultiFileFacadeKindMetadata;
-import proguard.classfile.kotlin.KotlinMultiFilePartKindMetadata;
-import proguard.classfile.kotlin.KotlinPropertyMetadata;
-import proguard.classfile.kotlin.KotlinSyntheticClassKindMetadata;
-import proguard.classfile.kotlin.KotlinTypeAliasMetadata;
-import proguard.classfile.kotlin.KotlinTypeMetadata;
-import proguard.classfile.kotlin.KotlinTypeParameterMetadata;
-import proguard.classfile.kotlin.KotlinValueParameterMetadata;
-import proguard.classfile.kotlin.KotlinVersionRequirementMetadata;
+import proguard.classfile.kotlin.*;
 import proguard.classfile.kotlin.flags.KotlinClassFlags;
 import proguard.classfile.kotlin.flags.KotlinEffectExpressionFlags;
 import proguard.classfile.kotlin.flags.KotlinFunctionFlags;
@@ -66,11 +59,7 @@ import proguard.classfile.util.ClassUtil;
 import proguard.classfile.visitor.ClassCounter;
 import proguard.classfile.visitor.MultiClassVisitor;
 import proguard.classfile.visitor.MultiMemberVisitor;
-import proguard.kotlin.printer.visitor.ConstantToStringVisitor;
-import proguard.kotlin.printer.visitor.KotlinClassTypeParameterVisitor;
-import proguard.kotlin.printer.visitor.KotlinMetadataVisitorWrapper;
-import proguard.kotlin.printer.visitor.KotlinTypeParameterVisitorWrapper;
-import proguard.kotlin.printer.visitor.KotlinTypeVisitorWrapper;
+import com.guardsquare.proguard.kotlin.printer.internal.visitor.KotlinTypeVisitorWrapper;
 
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,19 +70,7 @@ import java.util.regex.Pattern;
 
 import static java.lang.System.lineSeparator;
 import static java.util.Objects.requireNonNull;
-import static proguard.classfile.kotlin.KotlinConstants.METADATA_KIND_CLASS;
-import static proguard.classfile.kotlin.KotlinConstants.METADATA_KIND_MULTI_FILE_CLASS_PART;
-import static proguard.classfile.kotlin.KotlinConstants.METADATA_KIND_SYNTHETIC_CLASS;
-import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_ANY;
-import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_ENUM;
-import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_EXTENSION_FUNCTION;
-import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_FUNCTION;
-import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_PARAMETER_NAME;
-import static proguard.classfile.kotlin.KotlinConstants.NAME_KOTLIN_UNIT;
-import static proguard.classfile.kotlin.KotlinConstants.metadataKindToString;
 import static proguard.classfile.kotlin.KotlinTypeVariance.INVARIANT;
-import static proguard.classfile.util.ClassUtil.externalClassName;
-import static proguard.classfile.util.ClassUtil.externalShortClassName;
 
 /**
  * Prints the Kotlin metadata annotation in a format similar to
@@ -103,7 +80,7 @@ import static proguard.classfile.util.ClassUtil.externalShortClassName;
  *
  * @author James Hamilton
  */
-public class KotlinSourcePrinter
+public class KotlinMetadataSourcePrinter
 implements   KotlinMetadataVisitor
 {
     private static final String  INDENTATION         = "    ";
@@ -115,16 +92,16 @@ implements   KotlinMetadataVisitor
     private final Stack<StringBuilder>          stringBuilders = new Stack<>();
     private final MyKotlinSourceMetadataPrinter printer        = new MyKotlinSourceMetadataPrinter();
     private       int                           indentation;
-    private       Context                       context;
+    private Context context;
     private final boolean excludeEmbedded;
 
 
-    public KotlinSourcePrinter(ClassPool programClassPool)
+    public KotlinMetadataSourcePrinter(ClassPool programClassPool)
     {
         this(programClassPool, true);
     }
 
-    public KotlinSourcePrinter(ClassPool programClassPool, boolean excludeEmbedded)
+    public KotlinMetadataSourcePrinter(ClassPool programClassPool, boolean excludeEmbedded)
     {
         this.programClassPool = programClassPool;
         this.excludeEmbedded = excludeEmbedded;
@@ -139,7 +116,7 @@ implements   KotlinMetadataVisitor
             this.context = new Context();
         }
         pushStringBuilder();
-        KotlinMetadataVisitor printer = KotlinSourcePrinter.this.printer;
+        KotlinMetadataVisitor printer = KotlinMetadataSourcePrinter.this.printer;
 
         if (excludeEmbedded) {
             // Inner printer gets executed, then the string is written to the visitorInfo.
@@ -147,8 +124,8 @@ implements   KotlinMetadataVisitor
             // printed within non-synthetic ones. Likewise, multi-file class parts will
             // be printed in their facades.
             printer = new KotlinMetadataFilter(
-                    _kotlinMetadata -> _kotlinMetadata.k != METADATA_KIND_SYNTHETIC_CLASS &&
-                                       _kotlinMetadata.k != METADATA_KIND_MULTI_FILE_CLASS_PART,
+                    _kotlinMetadata -> _kotlinMetadata.k != KotlinConstants.METADATA_KIND_SYNTHETIC_CLASS &&
+                                       _kotlinMetadata.k != KotlinConstants.METADATA_KIND_MULTI_FILE_CLASS_PART,
                     printer
             );
         }
@@ -232,7 +209,7 @@ implements   KotlinMetadataVisitor
 
             printHeader(clazz, kotlinClassKindMetadata);
 
-            clazz.attributesAccept(new AnnotationPrinter(KotlinSourcePrinter.this));
+            clazz.attributesAccept(new AnnotationPrinter(KotlinMetadataSourcePrinter.this));
 
             kotlinClassKindMetadata.versionRequirementAccept(clazz,
                 (_clazz, versionRequirement) -> printVersionRequirement(versionRequirement));
@@ -285,8 +262,8 @@ implements   KotlinMetadataVisitor
 
             kotlinClassKindMetadata.superTypesAccept(clazz,
                 new KotlinTypeFilter(
-                    (kotlinTypeMetadata) -> !kotlinTypeMetadata.className.equals(NAME_KOTLIN_ANY) &&
-                                            !kotlinTypeMetadata.className.equals(NAME_KOTLIN_ENUM),
+                    (kotlinTypeMetadata) -> !kotlinTypeMetadata.className.equals(KotlinConstants.NAME_KOTLIN_ANY) &&
+                                            !kotlinTypeMetadata.className.equals(KotlinConstants.NAME_KOTLIN_ENUM),
                     new KotlinTypeVisitorWrapper(
                         (i, kotlinTypeMetadata) -> print(i == 0 ? ": " : ", "),
                         MyKotlinSourceMetadataPrinter.this,
@@ -467,7 +444,7 @@ implements   KotlinMetadataVisitor
         {
             context.push(new ContextFrame(clazz, kotlinMultiFilePartKindMetadata));
             printHeader(clazz, kotlinMultiFilePartKindMetadata);
-            String shortClassName = externalShortClassName(context.className(clazz, "_"));
+            String shortClassName = ClassUtil.externalShortClassName(context.className(clazz, "_"));
             int doubleUnderscoreIndex = shortClassName.indexOf("__");
             if (doubleUnderscoreIndex != -1)
             {
@@ -513,7 +490,7 @@ implements   KotlinMetadataVisitor
                                       }
                                   }))),
                                   new AllAttributeVisitor(
-                                  new AnnotationPrinter(KotlinSourcePrinter.this,
+                                  new AnnotationPrinter(KotlinMetadataSourcePrinter.this,
                                                         !kotlinConstructorMetadata.flags.isSecondary))));
                 }
                 String annotationsString = popStringBuilder();
@@ -555,7 +532,7 @@ implements   KotlinMetadataVisitor
 
             print(typeParameterFlags(kotlinTypeParameterMetadata.flags));
 
-            kotlinTypeParameterMetadata.annotationsAccept(clazz, new KotlinAnnotationPrinter(KotlinSourcePrinter.this));
+            kotlinTypeParameterMetadata.annotationsAccept(clazz, new KotlinAnnotationPrinter(KotlinMetadataSourcePrinter.this));
 
             print(kotlinTypeParameterMetadata.name);
 
@@ -682,7 +659,7 @@ implements   KotlinMetadataVisitor
             {
                 kotlinPropertyMetadata.referencedSyntheticMethodForAnnotations.accept(kotlinPropertyMetadata.referencedSyntheticMethodClass,
                     new AllAttributeVisitor(
-                    new AnnotationPrinter(KotlinSourcePrinter.this)));
+                    new AnnotationPrinter(KotlinMetadataSourcePrinter.this)));
             }
 
             kotlinPropertyMetadata.versionRequirementAccept(clazz, kotlinDeclarationContainerMetadata, this);
@@ -760,7 +737,7 @@ implements   KotlinMetadataVisitor
                 {
                     kotlinPropertyMetadata.referencedGetterMethod.accept(clazz,
                             new AllAttributeVisitor(
-                            new AnnotationPrinter(KotlinSourcePrinter.this)));
+                            new AnnotationPrinter(KotlinMetadataSourcePrinter.this)));
                 }
                 print(propertyAccessorFlags(kotlinPropertyMetadata.getterFlags) + "get", true);
                 if (kotlinPropertyMetadata.getterSignature != null)
@@ -790,7 +767,7 @@ implements   KotlinMetadataVisitor
                 {
                     kotlinPropertyMetadata.referencedSetterMethod.accept(clazz,
                             new AllAttributeVisitor(
-                            new AnnotationPrinter(KotlinSourcePrinter.this)));
+                            new AnnotationPrinter(KotlinMetadataSourcePrinter.this)));
                 }
                 print(propertyAccessorFlags(kotlinPropertyMetadata.setterFlags) + "set(", true);
                 kotlinPropertyMetadata.setterParametersAccept(clazz, kotlinDeclarationContainerMetadata, this);
@@ -827,16 +804,16 @@ implements   KotlinMetadataVisitor
 
             kotlinTypeMetadata.annotationsAccept(clazz,
                 // ExtensionFunctionTypes are marked by an annotation.
-                new KotlinAnnotationFilter(annotation -> annotation.className.equals(NAME_KOTLIN_EXTENSION_FUNCTION),
+                new KotlinAnnotationFilter(annotation -> annotation.className.equals(KotlinConstants.NAME_KOTLIN_EXTENSION_FUNCTION),
                     (clazz1, annotatable, annotation) -> isExtensionFunctionType.set(true),
                 // A function type can optionally include names for the function parameters (for documentation purposes).
-                new KotlinAnnotationFilter(annotation -> annotation.className.equals(NAME_KOTLIN_PARAMETER_NAME),
+                new KotlinAnnotationFilter(annotation -> annotation.className.equals(KotlinConstants.NAME_KOTLIN_PARAMETER_NAME),
                     new AllKotlinAnnotationArgumentVisitor(
                     new KotlinAnnotationArgumentFilter(argument -> argument.name.equals("name"),
                         ((clazz1, annotatable, annotation, argument, value) -> parameterName.set(value.toString()))
                     )),
                 // Else print the annotation.
-                new KotlinAnnotationPrinter(KotlinSourcePrinter.this))));
+                new KotlinAnnotationPrinter(KotlinMetadataSourcePrinter.this))));
 
             print(typeFlags(kotlinTypeMetadata.flags));
 
@@ -850,7 +827,7 @@ implements   KotlinMetadataVisitor
                 print(kotlinTypeMetadata.variance.toString().toLowerCase() + " ");
             }
 
-            if (kotlinTypeMetadata.className != null && kotlinTypeMetadata.className.startsWith(NAME_KOTLIN_FUNCTION))
+            if (kotlinTypeMetadata.className != null && kotlinTypeMetadata.className.startsWith(KotlinConstants.NAME_KOTLIN_FUNCTION))
             {
                 // Print function types e.g.
                 //    Function<R> = () -> R
@@ -961,7 +938,7 @@ implements   KotlinMetadataVisitor
         private void visitAnyReceiverType(Clazz clazz, KotlinTypeMetadata kotlinTypeMetadata)
         {
             boolean isFunctionType = kotlinTypeMetadata.className != null &&
-                                     kotlinTypeMetadata.className.startsWith(NAME_KOTLIN_FUNCTION);
+                                     kotlinTypeMetadata.className.startsWith(KotlinConstants.NAME_KOTLIN_FUNCTION);
             print(isFunctionType ? "(" : "");
             visitAnyType(clazz, kotlinTypeMetadata);
             print(isFunctionType ? ")." : ".");
@@ -973,7 +950,7 @@ implements   KotlinMetadataVisitor
                                             KotlinFunctionMetadata kotlinFunctionMetadata,
                                             KotlinTypeMetadata     kotlinTypeMetadata)
         {
-            if (!NAME_KOTLIN_UNIT.equals(kotlinTypeMetadata.className)) {
+            if (!KotlinConstants.NAME_KOTLIN_UNIT.equals(kotlinTypeMetadata.className)) {
                 print(": ");
                 visitAnyType(clazz, kotlinTypeMetadata);
             }
@@ -987,7 +964,7 @@ implements   KotlinMetadataVisitor
                                    KotlinDeclarationContainerMetadata kotlinDeclarationContainerMetadata,
                                    KotlinTypeAliasMetadata            kotlinTypeAliasMetadata)
         {
-            kotlinTypeAliasMetadata.annotationsAccept(clazz, new KotlinAnnotationPrinter(KotlinSourcePrinter.this));
+            kotlinTypeAliasMetadata.annotationsAccept(clazz, new KotlinAnnotationPrinter(KotlinMetadataSourcePrinter.this));
 
             kotlinTypeAliasMetadata.versionRequirementAccept(clazz, kotlinDeclarationContainerMetadata, this);
             print("typealias " + kotlinTypeAliasMetadata.name, true);
@@ -1010,7 +987,7 @@ implements   KotlinMetadataVisitor
                                      KotlinMetadata         kotlinMetadata,
                                      KotlinFunctionMetadata kotlinFunctionMetadata)
         {
-            kotlinFunctionMetadata.referencedMethodAccept(new AllAttributeVisitor(new AnnotationPrinter(KotlinSourcePrinter.this)));
+            kotlinFunctionMetadata.referencedMethodAccept(new AllAttributeVisitor(new AnnotationPrinter(KotlinMetadataSourcePrinter.this)));
             kotlinFunctionMetadata.versionRequirementAccept(clazz, kotlinMetadata, this);
             kotlinFunctionMetadata.contextReceiverTypesAccept(clazz, kotlinMetadata, new KotlinTypeVisitorWrapper(
                 (i, _kotlinTypeMetadata) -> print(i == 0 ? "context(" : ", ", true),
@@ -1094,11 +1071,11 @@ implements   KotlinMetadataVisitor
     {
         if (context.isTop() && context.getPackageName().length() > 0)
         {
-            println("package " + externalClassName(context.getPackageName()), true);
+            println("package " + ClassUtil.externalClassName(context.getPackageName()), true);
             println();
         }
-        String metadataKindString = metadataKindToString(kotlinMetadata.k);
-        if (kotlinMetadata.k == METADATA_KIND_CLASS && ((KotlinClassKindMetadata)kotlinMetadata).flags.isCompanionObject)
+        String metadataKindString = KotlinConstants.metadataKindToString(kotlinMetadata.k);
+        if (kotlinMetadata.k == KotlinConstants.METADATA_KIND_CLASS && ((KotlinClassKindMetadata)kotlinMetadata).flags.isCompanionObject)
         {
             metadataKindString = "companion " + metadataKindString;
         }
@@ -1107,15 +1084,15 @@ implements   KotlinMetadataVisitor
             println("/**", true);
             print("* Kotlin " + metadataKindString + " ", false);
             println("(metadata version " + kotlinMetadata.mv[0] + "." + kotlinMetadata.mv[1] + "." + kotlinMetadata.mv[2] + ").", true);
-            println("* From Java class: " + externalClassName(clazz.getName()), true);
+            println("* From Java class: " + ClassUtil.externalClassName(clazz.getName()), true);
             println("*/", true);
         }
         else
         {
-            println("// Kotlin " + metadataKindString + " from Java class: " + externalClassName(clazz.getName()), true);
-            if (kotlinMetadata.k == METADATA_KIND_CLASS && ((KotlinClassKindMetadata) kotlinMetadata).anonymousObjectOriginName != null)
+            println("// Kotlin " + metadataKindString + " from Java class: " + ClassUtil.externalClassName(clazz.getName()), true);
+            if (kotlinMetadata.k == KotlinConstants.METADATA_KIND_CLASS && ((KotlinClassKindMetadata) kotlinMetadata).anonymousObjectOriginName != null)
             {
-                println("// Anonymous object origin: " + externalClassName(((KotlinClassKindMetadata) kotlinMetadata).anonymousObjectOriginName), true);
+                println("// Anonymous object origin: " + ClassUtil.externalClassName(((KotlinClassKindMetadata) kotlinMetadata).anonymousObjectOriginName), true);
             }
         }
     }

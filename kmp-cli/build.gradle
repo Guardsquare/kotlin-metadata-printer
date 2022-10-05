@@ -1,0 +1,122 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.guardsquare:proguard-gradle:7.1.0'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'application'
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+    }
+}
+
+application {
+    mainClassName = 'com.guardsquare.proguard.tools.KotlinMetadataPrinterCli'
+}
+
+jar {
+    dependsOn(":kmp-library:jar")
+    manifest {
+        attributes 'Main-Class': application.mainClassName
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    archiveName "kotlin-metadata-printer.jar"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+dependencies {
+    implementation project(path: ":kmp-library")
+    implementation('com.github.Guardsquare:proguard-core:4273954d97fe57893f9e02eee43d3781b5cc8726') {
+        exclude(group: 'com.guardsquare', module: 'proguard-core')
+    }
+
+    // For some string utils.
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
+
+    // For building the JSON output.
+    implementation group: 'org.json', name: 'json', version: '20190722'
+
+    // picocli for command line parsing.
+    implementation group: 'info.picocli', name: 'picocli', version: '3.6.1'
+}
+
+def compiler = javaToolchains.compilerFor {
+    languageVersion = JavaLanguageVersion.of(8)
+}
+
+task copyBuild(type: Copy) {
+    dependsOn tasks.jar
+    tasks.assemble.dependsOn(it)
+
+    from tasks.jar.outputs
+    into file("$rootDir/lib")
+}
+
+// TODO: proguard shrinking temporary disabled, since log4j in ProGuardCORE causes problems
+task proguard(type: proguard.gradle.ProGuardTask) {
+    dependsOn tasks.jar
+    //tasks.assemble.dependsOn(it)
+
+    injars tasks.jar.outputs, filter: '**.class,log4j2.xml,META-INF/services/**,META-INF/MANIFEST.MF'
+    libraryjars project.configurations.findByName('compileClasspath').files - project.configurations.findByName('runtimeClasspath').files
+    outjars "$buildDir/libs/kotlin-metadata-printer-shrunk.jar"
+    outputs.file("$buildDir/libs/kotlin-metadata-printer-shrunk.jar")
+
+    libraryjars "${compiler.get().metadata.installationPath}/jre/lib/rt.jar"
+
+    dontwarn "picocli.**"
+    dontwarn "org.xml.sax.**"
+    dontwarn "org.objectweb.asm.**"
+
+    forceprocessing
+    ignorewarnings
+    verbose
+    keep 'public class proguard.tools.KotlinMetadataPrinter {' +
+            'public static void main(java.lang.String[]);' +
+            '}'
+
+    optimizationpasses 3
+    allowaccessmodification
+    keepattributes "*Annotation*"
+
+    adaptresourcefilecontents "META-INF/MANIFEST.MF,**.properties,META-INF/services/**"
+
+    keep allowshrinking: true, 'enum picocli.** { *; }'
+
+    keepclassmembers 'class * extends java.lang.Enum {' +
+            'public static **[] values();' +
+            'public static ** valueOf(java.lang.String);' +
+            '}'
+
+    keepclassmembers 'class * {'+
+            '@picocli.CommandLine$* *;' +
+            '}'
+
+    repackageclasses 'o'
+    keep 'class kotlinx.metadata.jvm.impl.JvmMetadataExtensions { *; }'
+    keep 'class kotlinx.metadata.impl.extensions.MetadataExtensions { *; }'
+    keep 'class proguard.classfile.kotlin.visitor.AllKotlinAnnotationArgumentVisitor {*;}'
+    keep includecode: true, 'class org.apache.logging.log4j.** { *; }'
+}
+
+clean {
+    delete file("$rootDir/lib/kotlin-metadata-printer.jar")
+}
+
+tasks.withType(Tar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.withType(Zip) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

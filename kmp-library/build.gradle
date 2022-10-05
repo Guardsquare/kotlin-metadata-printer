@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'java-test-fixtures'
+    id 'maven-publish'
+    id "org.jlleitschuh.gradle.ktlint" version '10.2.1'
+    id "org.jetbrains.kotlin.jvm" version "1.7.20"
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+dependencies {
+    api("com.guardsquare:proguard-core:9.0.4")
+
+    testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.20"
+    testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.7.20"
+    testImplementation 'com.github.tschuchortdev:kotlin-compile-testing:1.4.9'
+    testImplementation 'io.kotest:kotest-runner-junit5-jvm:5.4.2' // for kotest framework
+    testImplementation 'io.kotest:kotest-assertions-core-jvm:5.4.2' // for kotest core jvm assertions
+    testImplementation 'io.kotest:kotest-property-jvm:5.4.2' // for kotest property test
+    testImplementation 'io.mockk:mockk:1.12.8' // for mocking
+
+    testImplementation(testFixtures("com.guardsquare:proguard-core:9.0.4"))
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'com.guardsquare'
+            artifactId = 'kotlin-metadata-printer'
+            version = version
+
+            from components.java
+        }
+    }
+}

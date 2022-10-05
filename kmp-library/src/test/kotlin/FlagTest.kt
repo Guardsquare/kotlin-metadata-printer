@@ -1,7 +1,7 @@
+import com.guardsquare.proguard.kotlin.printer.KotlinMetadataSourcePrinter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor
-import proguard.kotlin.printer.KotlinSourcePrinter
 import proguard.testutils.ClassPoolBuilder
 import proguard.testutils.KotlinSource
 
@@ -16,7 +16,13 @@ class FlagTest : FunSpec({
             )
         )
 
-        programClassPool.classesAccept(ReferencedKotlinMetadataVisitor(KotlinSourcePrinter(programClassPool)))
+        programClassPool.classesAccept(
+            ReferencedKotlinMetadataVisitor(
+                KotlinMetadataSourcePrinter(
+                    programClassPool
+                )
+            )
+        )
 
         val testKtMetadata = programClassPool.getClass("TestKt").processingInfo as String
         println(testKtMetadata)

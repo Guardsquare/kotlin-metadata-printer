@@ -43,15 +43,15 @@ The Kotlin metadata printer is integrated in [ProGuard Playground](https://playg
 
 You can build the Kotlin metadata printer jar by executing the following Gradle command:
 
-    ./gradlew assemble
+    ./gradlew build
 
-Once built a jar will be created in build/libs/kotlin-metadata-printer.jar
+Once built a jar will be created in lib/kotlin-metadata-printer.jar
 
 ## Executing
 
 You can execute the printer directly through gradle as follows:
 
-    ./gradlew run --args "input.{apk,jar,zip,class}"
+    ./gradlew :kmp-cli:run --args "input.{apk,jar,zip,class}"
 
 Or you can execute the built printer jar as follows:
 
