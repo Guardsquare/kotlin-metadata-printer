@@ -7,10 +7,10 @@ import proguard.testutils.KotlinSource
 
 class FlagTest : FunSpec({
     test("IsDefinitelyNonNull") {
-            val (programClassPool, _) = ClassPoolBuilder.fromSource(
-        KotlinSource(
-            "Test.kt",
-            """
+        val (programClassPool, _) = ClassPoolBuilder.fromSource(
+            KotlinSource(
+                "Test.kt",
+                """
             fun <T> elvisLike(x: T, y: T & Any): T & Any = x ?: y
                 """
             )
