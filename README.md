@@ -103,16 +103,24 @@ the `KotlinMetadataPrinter` class along with a ProGuardCORE `ClassPool`. The pri
 metadata is placed into the processing info field of the `Clazz`.
 
 ```java
+import com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinter;
+import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor;
+import proguard.classfile.visitor.MultiClassVisitor;
+import proguard.classfile.util.kotlin.KotlinMetadataInitializer;
+import proguard.classfile.ClassPool;
+
 import static proguard.io.util.IOUtil.read;
 
 public class Main
 {
     public static void main(String[] args)
     {
-        ClassPool programClassPool = IOUtil.read(args[0], false);
+        ClassPool programClassPool = read(args[0], false);
         programClassPool.classesAccept(
+            new MultiClassVisitor(    
+            new KotlinMetadataInitializer((clazz, errorMessage) -> System.err.println(errorMessage)),        
             new ReferencedKotlinMetadataVisitor(
-            new KotlinMetadataPrinter(programClassPool))
+            new KotlinMetadataPrinter(programClassPool)))
         );
 
         programClassPool.classesAccept(clazz -> System.out.println(clazz.getProcessingInfo()));
