@@ -5,18 +5,26 @@
  * Copyright (c) 2002-2020 Guardsquare NV
  */
 
-package proguard.kotlin.printer;
+package com.guardsquare.proguard.kotlin.printer.internal;
 
+import com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinter;
+import com.guardsquare.proguard.kotlin.printer.internal.visitor.ConstantToStringVisitor;
 import proguard.classfile.Clazz;
 import proguard.classfile.attribute.Attribute;
-import proguard.classfile.attribute.annotation.*;
+import proguard.classfile.attribute.annotation.Annotation;
+import proguard.classfile.attribute.annotation.AnnotationElementValue;
+import proguard.classfile.attribute.annotation.AnnotationsAttribute;
+import proguard.classfile.attribute.annotation.ArrayElementValue;
+import proguard.classfile.attribute.annotation.ClassElementValue;
+import proguard.classfile.attribute.annotation.ConstantElementValue;
+import proguard.classfile.attribute.annotation.ElementValue;
+import proguard.classfile.attribute.annotation.EnumConstantElementValue;
 import proguard.classfile.attribute.annotation.visitor.AnnotationTypeFilter;
 import proguard.classfile.attribute.annotation.visitor.AnnotationVisitor;
 import proguard.classfile.attribute.annotation.visitor.ElementValueVisitor;
 import proguard.classfile.attribute.visitor.AttributeVisitor;
 import proguard.classfile.kotlin.KotlinConstants;
 import proguard.classfile.util.ClassUtil;
-import proguard.kotlin.printer.visitor.ConstantToStringVisitor;
 
 /**
  * Helper class to print annotations that are attached to Java elements,
@@ -29,17 +37,17 @@ implements   AttributeVisitor,
              AnnotationVisitor,
              ElementValueVisitor
 {
-    private final KotlinSourcePrinter printer;
+    private final KotlinMetadataPrinter printer;
     private final boolean                     inline;
     private       int                         level = 0;
 
 
-    public AnnotationPrinter(KotlinSourcePrinter printer)
+    public AnnotationPrinter(KotlinMetadataPrinter printer)
     {
         this(printer, false);
     }
 
-    public AnnotationPrinter(KotlinSourcePrinter printer, boolean inline)
+    public AnnotationPrinter(KotlinMetadataPrinter printer, boolean inline)
     {
         this.printer = printer;
         this.inline  = inline;

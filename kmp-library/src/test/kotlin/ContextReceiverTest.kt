@@ -1,7 +1,7 @@
+import com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor
-import proguard.kotlin.printer.KotlinSourcePrinter
 import proguard.testutils.ClassPoolBuilder
 import proguard.testutils.KotlinSource
 
@@ -28,7 +28,13 @@ class ContextReceiverTest : FunSpec({
             kotlincArguments = listOf("-Xcontext-receivers")
         )
 
-        programClassPool.classesAccept(ReferencedKotlinMetadataVisitor(KotlinSourcePrinter(programClassPool)))
+        programClassPool.classesAccept(
+            ReferencedKotlinMetadataVisitor(
+                KotlinMetadataPrinter(
+                    programClassPool
+                )
+            )
+        )
 
         val testKtMetadata = programClassPool.getClass("TestKt").processingInfo as String
         testKtMetadata.trimEnd() shouldBe """

@@ -5,10 +5,11 @@
  * Copyright (c) 2002-2020 Guardsquare NV
  */
 
-package proguard.kotlin.printer;
+package com.guardsquare.proguard.kotlin.printer.internal;
 
 import proguard.classfile.Clazz;
 import proguard.classfile.kotlin.KotlinClassKindMetadata;
+import proguard.classfile.kotlin.KotlinConstants;
 import proguard.classfile.kotlin.KotlinMetadata;
 import proguard.classfile.kotlin.KotlinTypeParameterMetadata;
 import proguard.classfile.kotlin.visitor.KotlinTypeParameterVisitor;
@@ -17,8 +18,8 @@ import proguard.classfile.util.ClassUtil;
 import java.util.HashMap;
 import java.util.Stack;
 
-import static proguard.classfile.kotlin.KotlinConstants.*;
-import static proguard.classfile.util.ClassUtil.*;
+import static proguard.classfile.kotlin.KotlinConstants.METADATA_KIND_CLASS;
+import static proguard.classfile.kotlin.KotlinConstants.METADATA_KIND_FILE_FACADE;
 
 /**
  * This class represents the context of the printer, in the form of a
@@ -41,7 +42,7 @@ implements   KotlinTypeParameterVisitor
     {
         if (contextFrameStack.empty())
         {
-            packageName = internalPackageName(contextFrame.clazz.getName());
+            packageName = ClassUtil.internalPackageName(contextFrame.clazz.getName());
             typeParamIdMap.clear();
         }
 
@@ -52,8 +53,8 @@ implements   KotlinTypeParameterVisitor
             typeParamIdMap.clear();
         }
 
-        if (contextFrame.kotlinMetadataKind == METADATA_KIND_MULTI_FILE_CLASS_PART &&
-            previous().kotlinMetadataKind   == METADATA_KIND_MULTI_FILE_CLASS_FACADE)
+        if (contextFrame.kotlinMetadataKind == KotlinConstants.METADATA_KIND_MULTI_FILE_CLASS_PART &&
+            previous().kotlinMetadataKind   == KotlinConstants.METADATA_KIND_MULTI_FILE_CLASS_FACADE)
         {
             typeParamIdMap.clear();
         }
@@ -123,7 +124,7 @@ implements   KotlinTypeParameterVisitor
         // Replace $ with something valid.
         result = result.replace("$", dollarReplacement);
         // Convert to external format.
-        result = externalClassName(result);
+        result = ClassUtil.externalClassName(result);
         // It's possible that the name is no longer valid i.e. it is a number
         if (!Character.isJavaIdentifierStart(result.charAt(0)))
         {

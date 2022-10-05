@@ -5,7 +5,7 @@
  * Copyright (c) 2002-2020 Guardsquare NV
  */
 
-package proguard.kotlin.printer;
+package com.guardsquare.proguard.kotlin.printer.internal;
 
 import proguard.classfile.Clazz;
 import proguard.classfile.kotlin.KotlinFunctionMetadata;

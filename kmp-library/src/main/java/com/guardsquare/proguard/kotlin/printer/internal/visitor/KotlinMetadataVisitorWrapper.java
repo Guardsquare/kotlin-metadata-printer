@@ -1,4 +1,4 @@
-package proguard.kotlin.printer.visitor;
+package com.guardsquare.proguard.kotlin.printer.internal.visitor;
 
 import proguard.classfile.Clazz;
 import proguard.classfile.kotlin.KotlinMetadata;

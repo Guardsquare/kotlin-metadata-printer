@@ -2,13 +2,19 @@
  * ProGuard -- shrinking, optimization, obfuscation, and preverification
  *             of Java bytecode.
  *
- * Copyright (c) 2002-2021 Guardsquare NV
+ * Copyright (c) 2002-2022 Guardsquare NV
  */
 
-package proguard.kotlin.printer;
+package com.guardsquare.proguard.kotlin.printer.internal;
 
+import com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinter;
 import proguard.classfile.Clazz;
-import proguard.classfile.kotlin.*;
+import proguard.classfile.kotlin.KotlinAnnotatable;
+import proguard.classfile.kotlin.KotlinAnnotation;
+import proguard.classfile.kotlin.KotlinAnnotationArgument;
+import proguard.classfile.kotlin.KotlinTypeAliasMetadata;
+import proguard.classfile.kotlin.KotlinTypeMetadata;
+import proguard.classfile.kotlin.KotlinTypeParameterMetadata;
 import proguard.classfile.kotlin.visitor.KotlinAnnotationArgumentVisitor;
 import proguard.classfile.kotlin.visitor.KotlinAnnotationVisitor;
 
@@ -26,12 +32,12 @@ public class KotlinAnnotationPrinter
 implements   KotlinAnnotationVisitor,
              KotlinAnnotationArgumentVisitor
 {
-    private final KotlinSourcePrinter printer;
+    private final KotlinMetadataPrinter printer;
     private boolean                   inline;
     private       int                 level = 0;
 
 
-    public KotlinAnnotationPrinter(KotlinSourcePrinter printer)
+    public KotlinAnnotationPrinter(KotlinMetadataPrinter printer)
     {
         this.printer = printer;
     }
