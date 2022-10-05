@@ -1,4 +1,4 @@
-import com.guardsquare.proguard.kotlin.printer.KotlinMetadataSourcePrinter
+import com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor
@@ -18,7 +18,7 @@ class FlagTest : FunSpec({
 
         programClassPool.classesAccept(
             ReferencedKotlinMetadataVisitor(
-                KotlinMetadataSourcePrinter(
+                KotlinMetadataPrinter(
                     programClassPool
                 )
             )

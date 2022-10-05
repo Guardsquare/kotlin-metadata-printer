@@ -131,7 +131,7 @@ implements   Runnable
                  new ReferencedKotlinMetadataVisitor(
                  new MultiKotlinMetadataVisitor(
                      (clazz, kotlinMetadata) -> kotlinMetadataCount++,
-                     new KotlinMetadataSourcePrinter(programClassPool))));
+                     new KotlinMetadataPrinter(programClassPool))));
 
             // Construct reader.
             // -----------------

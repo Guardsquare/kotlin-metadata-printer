@@ -7,7 +7,7 @@
 
 package com.guardsquare.proguard.kotlin.printer.internal;
 
-import com.guardsquare.proguard.kotlin.printer.KotlinMetadataSourcePrinter;
+import com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinter;
 import proguard.classfile.Clazz;
 import proguard.classfile.kotlin.KotlinAnnotatable;
 import proguard.classfile.kotlin.KotlinAnnotation;
@@ -32,12 +32,12 @@ public class KotlinAnnotationPrinter
 implements   KotlinAnnotationVisitor,
              KotlinAnnotationArgumentVisitor
 {
-    private final KotlinMetadataSourcePrinter printer;
+    private final KotlinMetadataPrinter printer;
     private boolean                   inline;
     private       int                 level = 0;
 
 
-    public KotlinAnnotationPrinter(KotlinMetadataSourcePrinter printer)
+    public KotlinAnnotationPrinter(KotlinMetadataPrinter printer)
     {
         this.printer = printer;
     }

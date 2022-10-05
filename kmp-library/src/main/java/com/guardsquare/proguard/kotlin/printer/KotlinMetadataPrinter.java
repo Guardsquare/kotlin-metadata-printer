@@ -80,7 +80,7 @@ import static proguard.classfile.kotlin.KotlinTypeVariance.INVARIANT;
  *
  * @author James Hamilton
  */
-public class KotlinMetadataSourcePrinter
+public class KotlinMetadataPrinter
 implements   KotlinMetadataVisitor
 {
     private static final String  INDENTATION         = "    ";
@@ -96,12 +96,12 @@ implements   KotlinMetadataVisitor
     private final boolean excludeEmbedded;
 
 
-    public KotlinMetadataSourcePrinter(ClassPool programClassPool)
+    public KotlinMetadataPrinter(ClassPool programClassPool)
     {
         this(programClassPool, true);
     }
 
-    public KotlinMetadataSourcePrinter(ClassPool programClassPool, boolean excludeEmbedded)
+    public KotlinMetadataPrinter(ClassPool programClassPool, boolean excludeEmbedded)
     {
         this.programClassPool = programClassPool;
         this.excludeEmbedded = excludeEmbedded;
@@ -116,7 +116,7 @@ implements   KotlinMetadataVisitor
             this.context = new Context();
         }
         pushStringBuilder();
-        KotlinMetadataVisitor printer = KotlinMetadataSourcePrinter.this.printer;
+        KotlinMetadataVisitor printer = KotlinMetadataPrinter.this.printer;
 
         if (excludeEmbedded) {
             // Inner printer gets executed, then the string is written to the visitorInfo.
@@ -209,7 +209,7 @@ implements   KotlinMetadataVisitor
 
             printHeader(clazz, kotlinClassKindMetadata);
 
-            clazz.attributesAccept(new AnnotationPrinter(KotlinMetadataSourcePrinter.this));
+            clazz.attributesAccept(new AnnotationPrinter(KotlinMetadataPrinter.this));
 
             kotlinClassKindMetadata.versionRequirementAccept(clazz,
                 (_clazz, versionRequirement) -> printVersionRequirement(versionRequirement));
@@ -490,7 +490,7 @@ implements   KotlinMetadataVisitor
                                       }
                                   }))),
                                   new AllAttributeVisitor(
-                                  new AnnotationPrinter(KotlinMetadataSourcePrinter.this,
+                                  new AnnotationPrinter(KotlinMetadataPrinter.this,
                                                         !kotlinConstructorMetadata.flags.isSecondary))));
                 }
                 String annotationsString = popStringBuilder();
@@ -532,7 +532,7 @@ implements   KotlinMetadataVisitor
 
             print(typeParameterFlags(kotlinTypeParameterMetadata.flags));
 
-            kotlinTypeParameterMetadata.annotationsAccept(clazz, new KotlinAnnotationPrinter(KotlinMetadataSourcePrinter.this));
+            kotlinTypeParameterMetadata.annotationsAccept(clazz, new KotlinAnnotationPrinter(KotlinMetadataPrinter.this));
 
             print(kotlinTypeParameterMetadata.name);
 
@@ -659,7 +659,7 @@ implements   KotlinMetadataVisitor
             {
                 kotlinPropertyMetadata.referencedSyntheticMethodForAnnotations.accept(kotlinPropertyMetadata.referencedSyntheticMethodClass,
                     new AllAttributeVisitor(
-                    new AnnotationPrinter(KotlinMetadataSourcePrinter.this)));
+                    new AnnotationPrinter(KotlinMetadataPrinter.this)));
             }
 
             kotlinPropertyMetadata.versionRequirementAccept(clazz, kotlinDeclarationContainerMetadata, this);
@@ -737,7 +737,7 @@ implements   KotlinMetadataVisitor
                 {
                     kotlinPropertyMetadata.referencedGetterMethod.accept(clazz,
                             new AllAttributeVisitor(
-                            new AnnotationPrinter(KotlinMetadataSourcePrinter.this)));
+                            new AnnotationPrinter(KotlinMetadataPrinter.this)));
                 }
                 print(propertyAccessorFlags(kotlinPropertyMetadata.getterFlags) + "get", true);
                 if (kotlinPropertyMetadata.getterSignature != null)
@@ -767,7 +767,7 @@ implements   KotlinMetadataVisitor
                 {
                     kotlinPropertyMetadata.referencedSetterMethod.accept(clazz,
                             new AllAttributeVisitor(
-                            new AnnotationPrinter(KotlinMetadataSourcePrinter.this)));
+                            new AnnotationPrinter(KotlinMetadataPrinter.this)));
                 }
                 print(propertyAccessorFlags(kotlinPropertyMetadata.setterFlags) + "set(", true);
                 kotlinPropertyMetadata.setterParametersAccept(clazz, kotlinDeclarationContainerMetadata, this);
@@ -813,7 +813,7 @@ implements   KotlinMetadataVisitor
                         ((clazz1, annotatable, annotation, argument, value) -> parameterName.set(value.toString()))
                     )),
                 // Else print the annotation.
-                new KotlinAnnotationPrinter(KotlinMetadataSourcePrinter.this))));
+                new KotlinAnnotationPrinter(KotlinMetadataPrinter.this))));
 
             print(typeFlags(kotlinTypeMetadata.flags));
 
@@ -964,7 +964,7 @@ implements   KotlinMetadataVisitor
                                    KotlinDeclarationContainerMetadata kotlinDeclarationContainerMetadata,
                                    KotlinTypeAliasMetadata            kotlinTypeAliasMetadata)
         {
-            kotlinTypeAliasMetadata.annotationsAccept(clazz, new KotlinAnnotationPrinter(KotlinMetadataSourcePrinter.this));
+            kotlinTypeAliasMetadata.annotationsAccept(clazz, new KotlinAnnotationPrinter(KotlinMetadataPrinter.this));
 
             kotlinTypeAliasMetadata.versionRequirementAccept(clazz, kotlinDeclarationContainerMetadata, this);
             print("typealias " + kotlinTypeAliasMetadata.name, true);
@@ -987,7 +987,7 @@ implements   KotlinMetadataVisitor
                                      KotlinMetadata         kotlinMetadata,
                                      KotlinFunctionMetadata kotlinFunctionMetadata)
         {
-            kotlinFunctionMetadata.referencedMethodAccept(new AllAttributeVisitor(new AnnotationPrinter(KotlinMetadataSourcePrinter.this)));
+            kotlinFunctionMetadata.referencedMethodAccept(new AllAttributeVisitor(new AnnotationPrinter(KotlinMetadataPrinter.this)));
             kotlinFunctionMetadata.versionRequirementAccept(clazz, kotlinMetadata, this);
             kotlinFunctionMetadata.contextReceiverTypesAccept(clazz, kotlinMetadata, new KotlinTypeVisitorWrapper(
                 (i, _kotlinTypeMetadata) -> print(i == 0 ? "context(" : ", ", true),

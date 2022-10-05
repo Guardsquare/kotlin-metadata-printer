@@ -7,7 +7,7 @@
 
 package com.guardsquare.proguard.kotlin.printer.internal;
 
-import com.guardsquare.proguard.kotlin.printer.KotlinMetadataSourcePrinter;
+import com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinter;
 import com.guardsquare.proguard.kotlin.printer.internal.visitor.ConstantToStringVisitor;
 import proguard.classfile.Clazz;
 import proguard.classfile.attribute.Attribute;
@@ -37,17 +37,17 @@ implements   AttributeVisitor,
              AnnotationVisitor,
              ElementValueVisitor
 {
-    private final KotlinMetadataSourcePrinter printer;
+    private final KotlinMetadataPrinter printer;
     private final boolean                     inline;
     private       int                         level = 0;
 
 
-    public AnnotationPrinter(KotlinMetadataSourcePrinter printer)
+    public AnnotationPrinter(KotlinMetadataPrinter printer)
     {
         this(printer, false);
     }
 
-    public AnnotationPrinter(KotlinMetadataSourcePrinter printer, boolean inline)
+    public AnnotationPrinter(KotlinMetadataPrinter printer, boolean inline)
     {
         this.printer = printer;
         this.inline  = inline;
