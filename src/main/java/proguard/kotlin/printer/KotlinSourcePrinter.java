@@ -894,6 +894,11 @@ implements   KotlinMetadataVisitor
                 {
                     print(")?");
                 }
+
+                if (kotlinTypeMetadata.flags.isDefinitelyNonNull)
+                {
+                    print(" & Any");
+                }
             }
             else
             {
@@ -910,6 +915,11 @@ implements   KotlinMetadataVisitor
                 if (kotlinTypeMetadata.flags.isNullable)
                 {
                     print("?");
+                }
+
+                if (kotlinTypeMetadata.flags.isDefinitelyNonNull)
+                {
+                    print(" & Any");
                 }
 
                 kotlinTypeMetadata.typeArgumentsAccept(clazz,
