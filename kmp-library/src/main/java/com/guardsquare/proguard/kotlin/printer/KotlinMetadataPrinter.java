@@ -54,6 +54,7 @@ import proguard.classfile.kotlin.visitor.filter.KotlinAnnotationArgumentFilter;
 import proguard.classfile.kotlin.visitor.filter.KotlinAnnotationFilter;
 import proguard.classfile.kotlin.visitor.filter.KotlinConstructorFilter;
 import proguard.classfile.kotlin.visitor.filter.KotlinMetadataFilter;
+import proguard.classfile.kotlin.visitor.filter.KotlinPropertyFilter;
 import proguard.classfile.kotlin.visitor.filter.KotlinTypeFilter;
 import proguard.classfile.util.ClassUtil;
 import proguard.classfile.visitor.ClassCounter;
@@ -174,6 +175,11 @@ implements   KotlinMetadataVisitor
         public void visitKotlinDeclarationContainerMetadata(Clazz                              clazz,
                                                             KotlinDeclarationContainerMetadata kotlinDeclarationContainerMetadata)
         {
+            printMembers(clazz, kotlinDeclarationContainerMetadata);
+        }
+
+        private void printMembers(Clazz clazz, KotlinDeclarationContainerMetadata kotlinDeclarationContainerMetadata)
+        {
             if (kotlinDeclarationContainerMetadata.typeAliases.size() > 0)
             {
                 println();
@@ -188,7 +194,7 @@ implements   KotlinMetadataVisitor
                 println();
                 println("// Properties", true);
                 println();
-                kotlinDeclarationContainerMetadata.propertiesAccept(         clazz, this);
+                kotlinDeclarationContainerMetadata.propertiesAccept(clazz, this);
                 kotlinDeclarationContainerMetadata.delegatedPropertiesAccept(clazz, this);
             }
 
@@ -263,7 +269,8 @@ implements   KotlinMetadataVisitor
             kotlinClassKindMetadata.superTypesAccept(clazz,
                 new KotlinTypeFilter(
                     (kotlinTypeMetadata) -> !kotlinTypeMetadata.className.equals(KotlinConstants.NAME_KOTLIN_ANY) &&
-                                            !kotlinTypeMetadata.className.equals(KotlinConstants.NAME_KOTLIN_ENUM),
+                                            !kotlinTypeMetadata.className.equals(KotlinConstants.NAME_KOTLIN_ENUM) &&
+                                            !kotlinTypeMetadata.className.equals("kotlin/Annotation"),
                     new KotlinTypeVisitorWrapper(
                         (i, kotlinTypeMetadata) -> print(i == 0 ? ": " : ", "),
                         MyKotlinSourceMetadataPrinter.this,
@@ -308,7 +315,11 @@ implements   KotlinMetadataVisitor
                 println("// Underlying property type: " + underlyingPropertyType, true);
             }
 
-            visitKotlinDeclarationContainerMetadata(clazz, kotlinClassKindMetadata);
+            if (!kotlinClassKindMetadata.flags.isAnnotationClass)
+            {
+                // Members are not allowed in annotation classes
+                printMembers(clazz, kotlinClassKindMetadata);
+            }
 
             // Companion is also a nested class but print it here first, so it's not mixed in with the nested classes.
             kotlinClassKindMetadata.companionAccept((companionClazz, companionMetadata) -> {
@@ -381,7 +392,7 @@ implements   KotlinMetadataVisitor
         {
             context.push(new ContextFrame(clazz, kotlinFileFacadeKindMetadata));
             printHeader(clazz, kotlinFileFacadeKindMetadata);
-            visitKotlinDeclarationContainerMetadata(clazz, kotlinFileFacadeKindMetadata);
+            printMembers(clazz, kotlinFileFacadeKindMetadata);
             visitChildClasses(clazz);
             context.pop();
         }
@@ -547,7 +558,15 @@ implements   KotlinMetadataVisitor
         @Override
         public void visitAnyValueParameter(Clazz clazz, KotlinValueParameterMetadata kotlinValueParameterMetadata)
         {
+            printValueParameter(ValueParameterType.NORMAL, kotlinValueParameterMetadata);
+        }
+
+
+        private void printValueParameter(ValueParameterType type, KotlinValueParameterMetadata kotlinValueParameterMetadata)
+        {
             print(kotlinValueParameterMetadata.index != 0 ? ", " : "");
+            if (type == ValueParameterType.VAL) print("val ");
+            else if (type == ValueParameterType.VAR) print("var ");
             print(valueParameterFlags(kotlinValueParameterMetadata.flags));
             print(kotlinValueParameterMetadata.isVarArg() ? "vararg " : "");
             print(kotlinValueParameterMetadata.parameterName
@@ -563,7 +582,7 @@ implements   KotlinMetadataVisitor
                                               KotlinPropertyMetadata             kotlinPropertyMetadata,
                                               KotlinValueParameterMetadata       kotlinValueParameterMetadata)
         {
-            visitAnyValueParameter(clazz, kotlinValueParameterMetadata);
+            printValueParameter(ValueParameterType.NORMAL, kotlinValueParameterMetadata);
             pushStringBuilder();
             kotlinValueParameterMetadata.typeAccept(clazz, kotlinDeclarationContainerMetadata, kotlinPropertyMetadata, this);
             print(popStringBuilder());
@@ -580,7 +599,7 @@ implements   KotlinMetadataVisitor
                                               KotlinFunctionMetadata       kotlinFunctionMetadata,
                                               KotlinValueParameterMetadata kotlinValueParameterMetadata)
         {
-            visitAnyValueParameter(clazz, kotlinValueParameterMetadata);
+            printValueParameter(ValueParameterType.NORMAL, kotlinValueParameterMetadata);
             pushStringBuilder();
             kotlinValueParameterMetadata.typeAccept(clazz, kotlinMetadata, kotlinFunctionMetadata, this);
             print(popStringBuilder());
@@ -597,7 +616,12 @@ implements   KotlinMetadataVisitor
                                                  KotlinConstructorMetadata    kotlinConstructorMetadata,
                                                  KotlinValueParameterMetadata kotlinValueParameterMetadata)
         {
-            visitAnyValueParameter(clazz, kotlinValueParameterMetadata);
+            ConstructorValParameterTypeChecker valueParameterTypeChecker = new ConstructorValParameterTypeChecker();
+            kotlinClassKindMetadata.propertiesAccept(clazz,
+                new KotlinPropertyFilter(property -> property.name.equals(kotlinValueParameterMetadata.parameterName),
+                                         valueParameterTypeChecker));
+
+            printValueParameter(valueParameterTypeChecker.valueParamterType, kotlinValueParameterMetadata);
             pushStringBuilder();
             // typeAccept calls both normal type accept and then varArg type accept, for varArgs.
             kotlinValueParameterMetadata.typeAccept(clazz, kotlinClassKindMetadata, kotlinConstructorMetadata, this);
@@ -1296,5 +1320,25 @@ implements   KotlinMetadataVisitor
             (flags.isCrossInline   ? "crossinline " : "") +
             (flags.isNoInline      ? "noinline "    : "") +
             (flags.hasDefaultValue ? ""  : "");
+    }
+    
+    private enum ValueParameterType
+    {
+        NORMAL, VAR, VAL
+    }
+
+    private static class ConstructorValParameterTypeChecker implements KotlinPropertyVisitor
+    {
+        public ValueParameterType valueParamterType = ValueParameterType.NORMAL;
+
+        @Override
+        public void visitAnyProperty(Clazz clazz,
+                                     KotlinDeclarationContainerMetadata kotlinDeclarationContainerMetadata,
+                                     KotlinPropertyMetadata kotlinPropertyMetadata)
+        {
+            if (kotlinPropertyMetadata.setterSignature != null) valueParamterType = ValueParameterType.VAR;
+            else if (kotlinPropertyMetadata.getterSignature != null) valueParamterType = ValueParameterType.VAL;
+            else valueParamterType = ValueParameterType.NORMAL;
+        }
     }
 }
