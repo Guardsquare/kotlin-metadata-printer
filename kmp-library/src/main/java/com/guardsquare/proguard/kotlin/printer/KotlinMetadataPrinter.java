@@ -729,7 +729,7 @@ implements   KotlinMetadataVisitor
                     // If the types are invalid this will throw an exception.
                     print(ClassUtil.externalFullFieldDescription(0,
                             kotlinPropertyMetadata.backingFieldSignature.memberName,
-                            kotlinPropertyMetadata.backingFieldSignature.descriptor.toString()));
+                            kotlinPropertyMetadata.backingFieldSignature.descriptor));
                 }
                 catch (IllegalArgumentException e)
                 {
@@ -744,11 +744,18 @@ implements   KotlinMetadataVisitor
                 indent();
                 println();
                 print("// Synthetic method for delegate: ", true);
-                print(ClassUtil.externalFullMethodDescription(
-                        clazz.getName(),
-                        kotlinPropertyMetadata.referencedSyntheticMethodForDelegateMethod.getAccessFlags(),
-                        kotlinPropertyMetadata.referencedSyntheticMethodForDelegateMethod.getName(clazz),
-                        kotlinPropertyMetadata.referencedSyntheticMethodForDelegateMethod.getDescriptor(clazz)));
+                if (kotlinPropertyMetadata.referencedSyntheticMethodForDelegateMethod == null)
+                {
+                    print("unknown");
+                }
+                else
+                {
+                    print(ClassUtil.externalFullMethodDescription(
+                            clazz.getName(),
+                            kotlinPropertyMetadata.referencedSyntheticMethodForDelegateMethod.getAccessFlags(),
+                            kotlinPropertyMetadata.referencedSyntheticMethodForDelegateMethod.getName(clazz),
+                            kotlinPropertyMetadata.referencedSyntheticMethodForDelegateMethod.getDescriptor(clazz)));
+                }
                 outdent();
             }
 
