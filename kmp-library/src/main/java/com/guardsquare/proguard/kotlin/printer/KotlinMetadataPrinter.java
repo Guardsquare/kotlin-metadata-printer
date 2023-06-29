@@ -187,7 +187,9 @@ implements   KotlinMetadataVisitor
                 println();
                 kotlinDeclarationContainerMetadata.typeAliasesAccept(clazz, this);
             }
-
+            // TODO: Move members that are properties declared in the constructor,
+            //       to not print them twice.
+            //       Annotations on those properties should also be printed in the constructor property.
             if (kotlinDeclarationContainerMetadata.properties.size()               > 0 ||
                 kotlinDeclarationContainerMetadata.localDelegatedProperties.size() > 0)
             {
@@ -315,11 +317,7 @@ implements   KotlinMetadataVisitor
                 println("// Underlying property type: " + underlyingPropertyType, true);
             }
 
-            if (!kotlinClassKindMetadata.flags.isAnnotationClass)
-            {
-                // Members are not allowed in annotation classes
-                printMembers(clazz, kotlinClassKindMetadata);
-            }
+            printMembers(clazz, kotlinClassKindMetadata);
 
             // Companion is also a nested class but print it here first, so it's not mixed in with the nested classes.
             kotlinClassKindMetadata.companionAccept((companionClazz, companionMetadata) -> {

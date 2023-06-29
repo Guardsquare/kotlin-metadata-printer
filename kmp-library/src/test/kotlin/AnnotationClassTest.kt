@@ -28,11 +28,19 @@ class AnnotationClassTest : FunSpec({
 
         testKtMetadata.trimEnd() shouldBe """
             /**
-            * Kotlin class (metadata version 1.7.1).
+            * Kotlin class (metadata version 1.8.0).
             * From Java class: MyAnnotation
             */
             @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
-            annotation class MyAnnotation(val parameter1: String, val parameter2: String)
+            annotation class MyAnnotation(val parameter1: String, val parameter2: String) {
+            
+                // Properties
+            
+                val parameter1: String
+                    get // getter method: public abstract java.lang.String parameter1()
+                val parameter2: String
+                    get // getter method: public abstract java.lang.String parameter2()
+            }
         """.trimIndent()
     }
 })

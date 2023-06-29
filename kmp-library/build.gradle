@@ -4,7 +4,7 @@ plugins {
     id 'java-test-fixtures'
     id 'maven-publish'
     id "org.jlleitschuh.gradle.ktlint" version '10.2.1'
-    id "org.jetbrains.kotlin.jvm" version "1.7.20"
+    id "org.jetbrains.kotlin.jvm" version "1.9.0-RC"
     id 'signing'
 }
 
@@ -24,17 +24,17 @@ test {
 }
 
 dependencies {
-    api('com.guardsquare:proguard-core:9.0.7')
+    api('com.github.Guardsquare:proguard-core:2f57960374')
 
-    testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.20"
-    testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.7.20"
-    testImplementation 'com.github.tschuchortdev:kotlin-compile-testing:1.4.9'
+    testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0-RC"
+    testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.9.0-RC"
+    testImplementation 'com.github.tschuchortdev:kotlin-compile-testing:1.5.0'
     testImplementation 'io.kotest:kotest-runner-junit5-jvm:5.4.2' // for kotest framework
     testImplementation 'io.kotest:kotest-assertions-core-jvm:5.4.2' // for kotest core jvm assertions
     testImplementation 'io.kotest:kotest-property-jvm:5.4.2' // for kotest property test
     testImplementation 'io.mockk:mockk:1.12.8' // for mocking
 
-    testImplementation(testFixtures("com.guardsquare:proguard-core:9.0.7"))
+    testImplementation(testFixtures("com.github.Guardsquare:proguard-core:2f57960374"))
 }
 
 publishing {

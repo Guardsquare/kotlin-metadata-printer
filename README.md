@@ -144,4 +144,4 @@ the [Apache License Version 2.0](LICENSE).
 
 Enjoy!
 
-Copyright (c) 2002-2022 Guardsquare NV
+Copyright (c) 2002-2023 Guardsquare NV
