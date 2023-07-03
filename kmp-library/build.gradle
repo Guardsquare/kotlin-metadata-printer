@@ -24,7 +24,7 @@ test {
 }
 
 dependencies {
-    api('com.github.Guardsquare:proguard-core:2f57960374')
+    api('com.guardsquare:proguard-core:9.0.10')
 
     testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0-RC"
     testImplementation "org.jetbrains.kotlin:kotlin-reflect:1.9.0-RC"
@@ -34,7 +34,7 @@ dependencies {
     testImplementation 'io.kotest:kotest-property-jvm:5.4.2' // for kotest property test
     testImplementation 'io.mockk:mockk:1.12.8' // for mocking
 
-    testImplementation(testFixtures("com.guardsquare:proguard-core:9.0.9"))
+    testImplementation(testFixtures("com.guardsquare:proguard-core:9.0.10"))
 }
 
 publishing {

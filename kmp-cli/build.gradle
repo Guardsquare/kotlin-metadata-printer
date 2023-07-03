@@ -36,7 +36,8 @@ jar {
 
 dependencies {
     implementation project(path: ":kmp-library")
-    implementation('com.github.Guardsquare:proguard-core:2f57960374')
+    implementation('com.guardsquare:proguard-core:9.0.10')
+    implementation('com.guardsquare:proguard-core-android:9.0.10')
 
     // For some string utils.
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
