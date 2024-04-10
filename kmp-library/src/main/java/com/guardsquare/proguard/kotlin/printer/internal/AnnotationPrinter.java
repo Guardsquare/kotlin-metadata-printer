@@ -9,7 +9,10 @@ package com.guardsquare.proguard.kotlin.printer.internal;
 
 import com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinter;
 import com.guardsquare.proguard.kotlin.printer.internal.visitor.ConstantToStringVisitor;
+import java.util.HashMap;
+import java.util.Map;
 import proguard.classfile.Clazz;
+import proguard.classfile.TypeConstants;
 import proguard.classfile.attribute.Attribute;
 import proguard.classfile.attribute.annotation.Annotation;
 import proguard.classfile.attribute.annotation.AnnotationElementValue;
@@ -40,7 +43,18 @@ implements   AttributeVisitor,
     private final KotlinMetadataPrinter printer;
     private final boolean                     inline;
     private       int                         level = 0;
+    private static final Map<Character, String> primitiveTypeToClass = new HashMap<>();
 
+    static {
+        primitiveTypeToClass.put(TypeConstants.BOOLEAN, "Boolean::class");
+        primitiveTypeToClass.put(TypeConstants.BYTE, "Byte::class");
+        primitiveTypeToClass.put(TypeConstants.CHAR, "Char::class");
+        primitiveTypeToClass.put(TypeConstants.SHORT, "Short::class");
+        primitiveTypeToClass.put(TypeConstants.INT, "Int::class");
+        primitiveTypeToClass.put(TypeConstants.FLOAT, "Float::class");
+        primitiveTypeToClass.put(TypeConstants.LONG, "Long::class");
+        primitiveTypeToClass.put(TypeConstants.DOUBLE, "Double::class");
+    }
 
     public AnnotationPrinter(KotlinMetadataPrinter printer)
     {
@@ -130,14 +144,19 @@ implements   AttributeVisitor,
         printer.print("." + enumConstantElementValue.getConstantName(clazz));
     }
 
-
     @Override
     public void visitClassElementValue(Clazz clazz, Annotation annotation, ClassElementValue classElementValue)
     {
         visitAnyElementValue(clazz, annotation, classElementValue);
-        printer.print(printer.getContext().className(ClassUtil.internalClassNameFromType(classElementValue.getClassName(clazz)), "."));
+        String internalClassName;
+        String className = classElementValue.getClassName(clazz);
+        if (ClassUtil.isInternalPrimitiveType(className)) {
+            internalClassName = primitiveTypeToClass.get(className.charAt(0));
+        } else {
+            internalClassName = ClassUtil.internalClassNameFromType(className);
+        }
+        printer.print(printer.getContext().className(internalClassName, "."));
     }
-
 
     @Override
     public void visitAnnotationElementValue(Clazz                  clazz,
