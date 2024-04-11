@@ -8,9 +8,9 @@ import proguard.testutils.KotlinSource
 class PrimitiveInAnnotationTest : FunSpec({
     test("Primitive type class in annotation") {
         val (programClassPool, _) = ClassPoolBuilder.fromSource(
-                KotlinSource(
-                        "Test.kt",
-                        """
+            KotlinSource(
+                "Test.kt",
+                """
                 import kotlin.reflect.KClass
 
                 @Target(AnnotationTarget.CLASS)
@@ -22,15 +22,15 @@ class PrimitiveInAnnotationTest : FunSpec({
                     var myInt: Int = 0
                 }
                 """.trimIndent()
-                ),
+            ),
         )
 
         programClassPool.classesAccept(
-                ReferencedKotlinMetadataVisitor(
-                        KotlinMetadataPrinter(
-                                programClassPool
-                        )
+            ReferencedKotlinMetadataVisitor(
+                KotlinMetadataPrinter(
+                    programClassPool
                 )
+            )
         )
 
         val testKtMetadata = programClassPool.getClass("Test").processingInfo as String
