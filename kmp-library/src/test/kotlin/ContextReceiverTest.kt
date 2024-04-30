@@ -39,13 +39,12 @@ class ContextReceiverTest : FunSpec({
         val testKtMetadata = programClassPool.getClass("TestKt").processingInfo as String
         testKtMetadata.trimEnd() shouldBe """
             /**
-            * Kotlin file facade (metadata version 1.8.0).
+            * Kotlin file facade (metadata version 1.9.0).
             * From Java class: TestKt
             */
 
             // Functions
 
-            @SinceKotlin("1.6.20")
             context(LoggerContext, FooBar)
             fun foo() { }
         """.trimIndent()
@@ -53,16 +52,14 @@ class ContextReceiverTest : FunSpec({
 
         fooMetadata.trimEnd() shouldBe """
            /**
-           * Kotlin class (metadata version 1.8.0).
+           * Kotlin class (metadata version 1.9.0).
            * From Java class: Foo
            */
-           @SinceKotlin("1.6.20")
            context(LoggerContext, FooBar)
            class Foo {
            
                // Properties
            
-               @SinceKotlin("1.6.20")
                context(LoggerContext)
                val prop: String
                    get // getter method: public final java.lang.String getProp(LoggerContext)

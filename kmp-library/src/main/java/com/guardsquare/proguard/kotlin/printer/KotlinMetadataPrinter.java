@@ -479,7 +479,7 @@ implements   KotlinMetadataVisitor
                                                                         !kotlinConstructorMetadata.flags.isSecondary));
             AtomicInteger annotationsCount = new AtomicInteger(0);
 
-            if (kotlinConstructorMetadata.flags.common.hasAnnotations &&
+            if (kotlinConstructorMetadata.flags.hasAnnotations &&
                 kotlinConstructorMetadata.jvmSignature != null)
             {
                 pushStringBuilder();
@@ -619,7 +619,7 @@ implements   KotlinMetadataVisitor
                 new KotlinPropertyFilter(property -> property.name.equals(kotlinValueParameterMetadata.parameterName),
                                          valueParameterTypeChecker));
 
-            printValueParameter(valueParameterTypeChecker.valueParamterType, kotlinValueParameterMetadata);
+            printValueParameter(valueParameterTypeChecker.valueParameterType, kotlinValueParameterMetadata);
             pushStringBuilder();
             // typeAccept calls both normal type accept and then varArg type accept, for varArgs.
             kotlinValueParameterMetadata.typeAccept(clazz, kotlinClassKindMetadata, kotlinConstructorMetadata, this);
@@ -676,7 +676,7 @@ implements   KotlinMetadataVisitor
                                      KotlinPropertyMetadata             kotlinPropertyMetadata)
         {
 
-            if (kotlinPropertyMetadata.flags.common.hasAnnotations &&
+            if (kotlinPropertyMetadata.flags.hasAnnotations &&
                 kotlinPropertyMetadata.referencedSyntheticMethodForAnnotations != null)
             {
                 kotlinPropertyMetadata.referencedSyntheticMethodForAnnotations.accept(kotlinPropertyMetadata.referencedSyntheticMethodClass,
@@ -757,11 +757,11 @@ implements   KotlinMetadataVisitor
                 outdent();
             }
 
-            if (kotlinPropertyMetadata.flags.hasGetter)
+            if (kotlinPropertyMetadata.getterFlags != null)
             {
                 indent();
                 println();
-                if (kotlinPropertyMetadata.getterFlags.common.hasAnnotations &&
+                if (kotlinPropertyMetadata.getterFlags.hasAnnotations &&
                     kotlinPropertyMetadata.referencedGetterMethod != null)
                 {
                     kotlinPropertyMetadata.referencedGetterMethod.accept(clazz,
@@ -787,11 +787,11 @@ implements   KotlinMetadataVisitor
                 outdent();
             }
 
-            if (kotlinPropertyMetadata.flags.hasSetter)
+            if (kotlinPropertyMetadata.setterFlags != null)
             {
                 indent();
                 println();
-                if (kotlinPropertyMetadata.setterFlags.common.hasAnnotations &&
+                if (kotlinPropertyMetadata.setterFlags.hasAnnotations &&
                     kotlinPropertyMetadata.referencedSetterMethod != null)
                 {
                     kotlinPropertyMetadata.referencedSetterMethod.accept(clazz,
@@ -1233,7 +1233,7 @@ implements   KotlinMetadataVisitor
            (flags.isAnnotationClass ? "annotation class "  : "") +
            (flags.isInner           ? "inner "             : "") + // Also isUsualClass = true.
            (flags.isData            ? "data "              : "") + // Also isUsualClass = true.
-           (flags.isValue           ? "value "             : (flags.isInline ? "inline " : "")) + // Also isUsualClass = true.
+           (flags.isValue           ? "value "             : "") + // Also isUsualClass = true.
            (flags.isUsualClass      ? "class "             : "") +
            (flags.isFun             ? "fun "               : "") +
            (flags.isInterface       ? "interface "         : "") +
@@ -1334,16 +1334,16 @@ implements   KotlinMetadataVisitor
 
     private static class ConstructorValParameterTypeChecker implements KotlinPropertyVisitor
     {
-        public ValueParameterType valueParamterType = ValueParameterType.NORMAL;
+        public ValueParameterType valueParameterType = ValueParameterType.NORMAL;
 
         @Override
         public void visitAnyProperty(Clazz clazz,
                                      KotlinDeclarationContainerMetadata kotlinDeclarationContainerMetadata,
                                      KotlinPropertyMetadata kotlinPropertyMetadata)
         {
-            if (kotlinPropertyMetadata.setterSignature != null) valueParamterType = ValueParameterType.VAR;
-            else if (kotlinPropertyMetadata.getterSignature != null) valueParamterType = ValueParameterType.VAL;
-            else valueParamterType = ValueParameterType.NORMAL;
+            if (kotlinPropertyMetadata.setterSignature != null) valueParameterType = ValueParameterType.VAR;
+            else if (kotlinPropertyMetadata.getterSignature != null) valueParameterType = ValueParameterType.VAL;
+            else valueParameterType = ValueParameterType.NORMAL;
         }
     }
 }
