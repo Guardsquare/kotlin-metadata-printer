@@ -436,6 +436,8 @@ implements   KotlinMetadataVisitor
             indent();
             for (String partClassName : kotlinMultiFileFacadeKindMetadata.partClassNames)
             {
+                if (clazz.getName().equals(partClassName)) continue;
+
                 Clazz partClass = programClassPool.getClass(partClassName);
                 if (partClass != null)
                 {
