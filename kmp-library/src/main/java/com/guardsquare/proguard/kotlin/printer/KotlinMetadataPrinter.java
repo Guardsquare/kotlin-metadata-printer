@@ -1080,7 +1080,7 @@ implements   KotlinMetadataVisitor
             // Cache the synthetic class string, as we might have already visited them, so the string will be empty.
             pushStringBuilder();
             programClassPool.classesAccept(
-                    clazz.getName() + TypeConstants.INNER_CLASS_SEPARATOR + "*",
+                    clazz.getName() + TypeConstants.INNER_CLASS_SEPARATOR + "[^$]+",
                     new ReferencedKotlinMetadataVisitor(MyKotlinSourceMetadataPrinter.this));
             String innerClassesString = popStringBuilder();
             if (innerClassesString.length() > 0)
