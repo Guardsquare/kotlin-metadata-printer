@@ -37,7 +37,7 @@ class PrimitiveInAnnotationTest : FunSpec({
 
         testKtMetadata.trimEnd() shouldBe """
             /**
-            * Kotlin class (metadata version 1.9.0).
+            * Kotlin class (metadata version 2.0.0).
             * From Java class: Test
             */
             @Serializer(forClass = Int::class)

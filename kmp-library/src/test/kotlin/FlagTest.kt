@@ -29,7 +29,7 @@ class FlagTest : FunSpec({
 
         testKtMetadata.trimEnd() shouldBe """
         /**
-        * Kotlin file facade (metadata version 1.9.0).
+        * Kotlin file facade (metadata version 2.0.0).
         * From Java class: TestKt
         */
         
