@@ -42,8 +42,7 @@ jobs:
               })
             })
     - name: Store artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release
         path: lib/kotlin-metadata-printer.jar
-        
