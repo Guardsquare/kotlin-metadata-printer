@@ -39,7 +39,7 @@ class ContextReceiverTest : FunSpec({
         val testKtMetadata = programClassPool.getClass("TestKt").processingInfo as String
         testKtMetadata.trimEnd() shouldBe """
             /**
-            * Kotlin file facade (metadata version 2.0.0).
+            * Kotlin file facade (metadata version 2.1.0).
             * From Java class: TestKt
             */
 
@@ -52,7 +52,7 @@ class ContextReceiverTest : FunSpec({
 
         fooMetadata.trimEnd() shouldBe """
            /**
-           * Kotlin class (metadata version 2.0.0).
+           * Kotlin class (metadata version 2.1.0).
            * From Java class: Foo
            */
            context(LoggerContext, FooBar)
