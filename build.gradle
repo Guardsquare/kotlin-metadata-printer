@@ -8,10 +8,10 @@ allprojects {
 
 subprojects {
     repositories {
+        mavenLocal()
         mavenCentral()
         maven { url 'https://jitpack.io' }
         google()
-        mavenLocal()
     }
 }
 

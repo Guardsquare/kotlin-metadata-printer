@@ -28,7 +28,7 @@ class AnnotationClassTest : FunSpec({
 
         testKtMetadata.trimEnd() shouldBe """
             /**
-            * Kotlin class (metadata version 2.1.0).
+            * Kotlin class (metadata version 2.2.0).
             * From Java class: MyAnnotation
             */
             @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
