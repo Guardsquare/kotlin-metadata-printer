@@ -1,0 +1,37 @@
+[versions]
+apache-commons = "3.20.0"
+json = "20250517"
+kctfork = "0.8.0"
+kotest = "5.7.2"
+kotlin = "2.2.0"
+ktlint = "10.2.1"
+mockk = "1.13.12"
+nexus-publish = "2.0.0"
+picocli = "3.6.1"
+proguard-core = "9.1.11"
+proguard-gradle = "7.1.0"
+
+[libraries]
+apache-commons-lang = { group = "org.apache.commons", name = "commons-lang3", version.ref = "apache-commons" }
+json =  { group = "org.json", name = "json", version.ref = "json" }
+kctfork = { group = "dev.zacsweers.kctfork", name = "core", version.ref = "kctfork" }
+kotest-runner-jvm = { group = "io.kotest", name = "kotest-runner-junit5-jvm", version.ref = "kotest" }
+kotest-assertions-jvm = { group = "io.kotest", name = "kotest-assertions-core-jvm", version.ref = "kotest" }
+kotest-property-jvm = { group = "io.kotest", name = "kotest-property-jvm", version.ref = "kotest" }
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+picocli = { group = "info.picocli", name = "picocli", version.ref = "picocli" }
+proguard-core = { group = "com.guardsquare", name = "proguard-core", version.ref = "proguard-core" }
+proguard-core-android = { group = "com.guardsquare", name = "proguard-core-android", version.ref = "proguard-core" }
+proguard-gradle = { group = "com.guardsquare", name = "proguard-gradle", version.ref = "proguard-gradle" }
+
+[bundles]
+kotest = ["kotest-assertions-jvm", "kotest-property-jvm", "kotest-runner-jvm"]
+kotlin = ["kotlin-stdlib", "kotlin-reflect"]
+
+
+[plugins]
+kotlin-plugin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+nexus-publish = { id  = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish"}

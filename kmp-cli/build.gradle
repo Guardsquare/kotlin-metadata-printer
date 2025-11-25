@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.guardsquare:proguard-gradle:7.1.0'
+        classpath(libs.proguard.gradle)
     }
 }
 
@@ -36,17 +36,17 @@ jar {
 
 dependencies {
     implementation project(path: ":kmp-library")
-    implementation('com.guardsquare:proguard-core:9.1.11')
-    implementation('com.guardsquare:proguard-core-android:9.1.11')
+    implementation(libs.proguard.core)
+    implementation(libs.proguard.core.android)
 
     // For some string utils.
-    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
+    implementation(libs.apache.commons.lang)
 
     // For building the JSON output.
-    implementation group: 'org.json', name: 'json', version: '20190722'
+    implementation(libs.json)
 
     // picocli for command line parsing.
-    implementation group: 'info.picocli', name: 'picocli', version: '3.6.1'
+    implementation(libs.picocli)
 }
 
 def compiler = javaToolchains.compilerFor {
