@@ -8,7 +8,7 @@ ktlint = "10.2.1"
 mockk = "1.13.12"
 nexus-publish = "2.0.0"
 picocli = "3.6.1"
-proguard-core = "9.1.11"
+proguard-core = "9.3.0"
 proguard-gradle = "7.1.0"
 
 [libraries]

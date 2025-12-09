@@ -29,7 +29,7 @@ import proguard.classfile.kotlin.flags.KotlinClassFlags;
 import proguard.classfile.kotlin.flags.KotlinEffectExpressionFlags;
 import proguard.classfile.kotlin.flags.KotlinFunctionFlags;
 import proguard.classfile.kotlin.flags.KotlinModalityFlags;
-import proguard.classfile.kotlin.flags.KotlinPropertyAccessorFlags;
+import proguard.classfile.kotlin.flags.KotlinPropertyAccessorMetadata;
 import proguard.classfile.kotlin.flags.KotlinPropertyFlags;
 import proguard.classfile.kotlin.flags.KotlinTypeFlags;
 import proguard.classfile.kotlin.flags.KotlinTypeParameterFlags;
@@ -348,14 +348,14 @@ implements   KotlinMetadataVisitor
             visitChildClasses(clazz);
 
             pushStringBuilder();
-            for (int i = 0; i < kotlinClassKindMetadata.enumEntryNames.size(); i++)
+            for (int i = 0; i < kotlinClassKindMetadata.enumEntries.size(); i++)
             {
                 if (i > 0 && i % MAX_ENUM_ENTRY_PER_LINE == 0)
                 {
                     println();
                 }
-                print(kotlinClassKindMetadata.enumEntryNames.get(i), i % MAX_ENUM_ENTRY_PER_LINE == 0);
-                print(i != kotlinClassKindMetadata.enumEntryNames.size() - 1 ? ", " : "");
+                print(kotlinClassKindMetadata.enumEntries.get(i).name, i % MAX_ENUM_ENTRY_PER_LINE == 0);
+                print(i != kotlinClassKindMetadata.enumEntries.size() - 1 ? ", " : "");
             }
 
             outdent();
@@ -363,20 +363,20 @@ implements   KotlinMetadataVisitor
             String enumEntriesString = popStringBuilder();
             String classBody         = popStringBuilder();
 
-            if (classBody.length() > 0)
+            if (!classBody.isEmpty())
             {
                 println("{");
-                if (enumEntriesString.length() > 0)
+                if (!enumEntriesString.isEmpty())
                 {
                     println(enumEntriesString + ";");
                 }
                 print(classBody, true);
                 println("}", true);
             }
-            else if (enumEntriesString.length() > 0)
+            else if (!enumEntriesString.isEmpty())
             {
                 // Enums without bodies.
-                boolean oneLine = kotlinClassKindMetadata.enumEntryNames.size() <= MAX_ENUM_ENTRY_PER_LINE;
+                boolean oneLine = kotlinClassKindMetadata.enumEntries.size() <= MAX_ENUM_ENTRY_PER_LINE;
                 print("{" + (oneLine ? " " : lineSeparator()));
                 print(oneLine ? enumEntriesString.trim() + " " : enumEntriesString + lineSeparator(), !oneLine);
                 println("}", !oneLine);
@@ -764,62 +764,62 @@ implements   KotlinMetadataVisitor
                 outdent();
             }
 
-            if (kotlinPropertyMetadata.getterFlags != null)
+            if (kotlinPropertyMetadata.getterMetadata != null)
             {
                 indent();
                 println();
-                if (kotlinPropertyMetadata.getterFlags.hasAnnotations &&
-                    kotlinPropertyMetadata.referencedGetterMethod != null)
+                if (!kotlinPropertyMetadata.getterMetadata.annotations.isEmpty() &&
+                    kotlinPropertyMetadata.getterMetadata.referencedMethod != null)
                 {
-                    kotlinPropertyMetadata.referencedGetterMethod.accept(clazz,
+                    kotlinPropertyMetadata.getterMetadata.referencedMethod.accept(clazz,
                             new AllAttributeVisitor(
                             new AnnotationPrinter(KotlinMetadataPrinter.this)));
                 }
-                print(propertyAccessorFlags(kotlinPropertyMetadata.getterFlags) + "get", true);
-                if (kotlinPropertyMetadata.getterSignature != null)
+                print(propertyAccessorFlags(kotlinPropertyMetadata.getterMetadata) + "get", true);
+                if (kotlinPropertyMetadata.getterMetadata.signature != null)
                 {
-                    if (kotlinPropertyMetadata.referencedGetterMethod != null)
+                    if (kotlinPropertyMetadata.getterMetadata.referencedMethod != null)
                     {
                         print(" // getter method: ");
                         print(ClassUtil.externalFullMethodDescription(clazz.getName(),
-                                kotlinPropertyMetadata.referencedGetterMethod.getAccessFlags(),
-                                kotlinPropertyMetadata.referencedGetterMethod.getName(clazz),
-                                kotlinPropertyMetadata.referencedGetterMethod.getDescriptor(clazz)));
+                                kotlinPropertyMetadata.getterMetadata.referencedMethod.getAccessFlags(),
+                                kotlinPropertyMetadata.getterMetadata.referencedMethod.getName(clazz),
+                                kotlinPropertyMetadata.getterMetadata.referencedMethod.getDescriptor(clazz)));
                     }
                 }
-                else if (kotlinPropertyMetadata.getterFlags.isDefault)
+                else if (kotlinPropertyMetadata.getterMetadata.isDefault)
                 {
                     print(" // default getter");
                 }
                 outdent();
             }
 
-            if (kotlinPropertyMetadata.setterFlags != null)
+            if (kotlinPropertyMetadata.setterMetadata != null)
             {
                 indent();
                 println();
-                if (kotlinPropertyMetadata.setterFlags.hasAnnotations &&
-                    kotlinPropertyMetadata.referencedSetterMethod != null)
+                if (!kotlinPropertyMetadata.setterMetadata.annotations.isEmpty() &&
+                    kotlinPropertyMetadata.setterMetadata.referencedMethod != null)
                 {
-                    kotlinPropertyMetadata.referencedSetterMethod.accept(clazz,
+                    kotlinPropertyMetadata.setterMetadata.referencedMethod.accept(clazz,
                             new AllAttributeVisitor(
                             new AnnotationPrinter(KotlinMetadataPrinter.this)));
                 }
-                print(propertyAccessorFlags(kotlinPropertyMetadata.setterFlags) + "set(", true);
-                kotlinPropertyMetadata.setterParametersAccept(clazz, kotlinDeclarationContainerMetadata, this);
+                print(propertyAccessorFlags(kotlinPropertyMetadata.setterMetadata) + "set(", true);
+                kotlinPropertyMetadata.setterParameterAccept(clazz, kotlinDeclarationContainerMetadata, this);
                 print(")");
-                if (kotlinPropertyMetadata.setterSignature != null)
+                if (kotlinPropertyMetadata.setterMetadata.signature != null)
                 {
-                    if (kotlinPropertyMetadata.referencedSetterMethod != null)
+                    if (kotlinPropertyMetadata.setterMetadata.referencedMethod != null)
                     {
                         print(" // setter method: ");
                         print(ClassUtil.externalFullMethodDescription(clazz.getName(),
-                                kotlinPropertyMetadata.referencedSetterMethod.getAccessFlags(),
-                                kotlinPropertyMetadata.referencedSetterMethod.getName(clazz),
-                                kotlinPropertyMetadata.referencedSetterMethod.getDescriptor(clazz)));
+                                kotlinPropertyMetadata.setterMetadata.referencedMethod.getAccessFlags(),
+                                kotlinPropertyMetadata.setterMetadata.referencedMethod.getName(clazz),
+                                kotlinPropertyMetadata.setterMetadata.referencedMethod.getDescriptor(clazz)));
                     }
                 }
-                else if (kotlinPropertyMetadata.setterFlags.isDefault)
+                else if (kotlinPropertyMetadata.setterMetadata.isDefault)
                 {
                     print(" // default setter");
                 }
@@ -1286,7 +1286,7 @@ implements   KotlinMetadataVisitor
     }
 
 
-    private String propertyAccessorFlags(KotlinPropertyAccessorFlags flags)
+    private String propertyAccessorFlags(KotlinPropertyAccessorMetadata flags)
     {
         return
             visibilityFlags(flags.visibility) + modalityFlags(true, flags.modality) +
@@ -1352,8 +1352,8 @@ implements   KotlinMetadataVisitor
                                      KotlinDeclarationContainerMetadata kotlinDeclarationContainerMetadata,
                                      KotlinPropertyMetadata kotlinPropertyMetadata)
         {
-            if (kotlinPropertyMetadata.setterSignature != null) valueParameterType = ValueParameterType.VAR;
-            else if (kotlinPropertyMetadata.getterSignature != null) valueParameterType = ValueParameterType.VAL;
+            if (kotlinPropertyMetadata.setterMetadata != null && kotlinPropertyMetadata.setterMetadata.signature != null) valueParameterType = ValueParameterType.VAR;
+            else if (kotlinPropertyMetadata.getterMetadata != null && kotlinPropertyMetadata.getterMetadata.signature != null) valueParameterType = ValueParameterType.VAL;
             else valueParameterType = ValueParameterType.NORMAL;
         }
     }
