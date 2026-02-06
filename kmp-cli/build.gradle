@@ -1,3 +1,5 @@
+import proguard.gradle.ProGuardTask
+
 buildscript {
     repositories {
         mavenCentral()
@@ -19,7 +21,7 @@ java {
 }
 
 application {
-    mainClassName = 'com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinterCli'
+    mainClass = "com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinterCli"
 }
 
 jar {
@@ -53,23 +55,23 @@ def compiler = javaToolchains.compilerFor {
     languageVersion = JavaLanguageVersion.of(8)
 }
 
-task copyBuild(type: Copy) {
-    dependsOn tasks.jar
+def copyBuild = tasks.register("copyBuild" ,Copy) {
     tasks.assemble.dependsOn(it)
 
-    from tasks.jar.outputs
+    from(tasks.jar)
     into file("$rootDir/lib")
 }
 
 // TODO: proguard shrinking temporary disabled, since log4j in ProGuardCORE causes problems
-task proguard(type: proguard.gradle.ProGuardTask) {
-    dependsOn tasks.jar
+def proguard = tasks.register("proguard", ProGuardTask) {
     //tasks.assemble.dependsOn(it)
 
-    injars tasks.jar.outputs, filter: '**.class,log4j2.xml,META-INF/services/**,META-INF/MANIFEST.MF'
-    libraryjars project.configurations.findByName('compileClasspath').files - project.configurations.findByName('runtimeClasspath').files
-    outjars "$buildDir/libs/kotlin-metadata-printer-shrunk.jar"
-    outputs.file("$buildDir/libs/kotlin-metadata-printer-shrunk.jar")
+    injars tasks.jar, filter: '**.class,log4j2.xml,META-INF/services/**,META-INF/MANIFEST.MF'
+    def compileFiles = configurations.compileClasspath.incoming.artifacts.artifactFiles
+    def runtimeFiles = configurations.runtimeClasspath.incoming.artifacts.artifactFiles
+
+    libraryjars(compileFiles-runtimeFiles)
+    outjars(project.layout.buildDirectory.file("libs/kotlin-metadata-printer-shrunk.jar"))
 
     libraryjars "${compiler.get().metadata.installationPath}/jre/lib/rt.jar"
 
@@ -80,7 +82,7 @@ task proguard(type: proguard.gradle.ProGuardTask) {
     forceprocessing
     ignorewarnings
     verbose
-    keep 'public class proguard.tools.KotlinMetadataPrinter {' +
+    keep 'public class  com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinterCli {' +
             'public static void main(java.lang.String[]);' +
             '}'
 
@@ -112,10 +114,10 @@ clean {
     delete file("$rootDir/lib/kotlin-metadata-printer.jar")
 }
 
-tasks.withType(Tar) {
+tasks.withType(Tar).configureEach {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-tasks.withType(Zip) {
+tasks.withType(Zip).configureEach {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
