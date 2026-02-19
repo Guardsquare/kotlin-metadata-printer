@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor
 import proguard.testutils.ClassPoolBuilder
 import proguard.testutils.KotlinSource
+import util.kotlinVersion
 
 class ContextReceiverTest : FunSpec({
     test("Context receivers should be printed") {
@@ -39,20 +40,20 @@ class ContextReceiverTest : FunSpec({
         val testKtMetadata = programClassPool.getClass("TestKt").processingInfo as String
         testKtMetadata.trimEnd() shouldBe """
             /**
-            * Kotlin file facade (metadata version 2.2.0).
+            * Kotlin file facade (metadata version $kotlinVersion).
             * From Java class: TestKt
             */
 
             // Functions
 
-            context(LoggerContext, FooBar)
+            context(LoggerContext: LoggerContext, FooBar: FooBar)
             fun foo() { }
         """.trimIndent()
         val fooMetadata = programClassPool.getClass("Foo").processingInfo as String
 
         fooMetadata.trimEnd() shouldBe """
            /**
-           * Kotlin class (metadata version 2.2.0).
+           * Kotlin class (metadata version $kotlinVersion).
            * From Java class: Foo
            */
            context(LoggerContext, FooBar)
@@ -60,7 +61,7 @@ class ContextReceiverTest : FunSpec({
            
                // Properties
            
-               context(LoggerContext)
+               context(LoggerContext: LoggerContext)
                val prop: String
                    get // getter method: public final java.lang.String getProp(LoggerContext)
            }

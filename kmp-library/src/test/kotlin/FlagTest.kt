@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor
 import proguard.testutils.ClassPoolBuilder
 import proguard.testutils.KotlinSource
+import util.kotlinVersion
 
 class FlagTest : FunSpec({
     test("IsDefinitelyNonNull") {
@@ -29,7 +30,7 @@ class FlagTest : FunSpec({
 
         testKtMetadata.trimEnd() shouldBe """
         /**
-        * Kotlin file facade (metadata version 2.2.0).
+        * Kotlin file facade (metadata version $kotlinVersion).
         * From Java class: TestKt
         */
         

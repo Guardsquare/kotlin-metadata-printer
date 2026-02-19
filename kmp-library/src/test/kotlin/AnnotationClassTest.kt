@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor
 import proguard.testutils.ClassPoolBuilder
 import proguard.testutils.KotlinSource
+import util.kotlinVersion
 
 class AnnotationClassTest : FunSpec({
     test("Annotation class") {
@@ -28,7 +29,7 @@ class AnnotationClassTest : FunSpec({
 
         testKtMetadata.trimEnd() shouldBe """
             /**
-            * Kotlin class (metadata version 2.2.0).
+            * Kotlin class (metadata version $kotlinVersion).
             * From Java class: MyAnnotation
             */
             @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)

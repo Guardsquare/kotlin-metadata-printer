@@ -11,9 +11,11 @@ import com.guardsquare.proguard.kotlin.printer.internal.Context;
 import com.guardsquare.proguard.kotlin.printer.internal.ContextFrame;
 import com.guardsquare.proguard.kotlin.printer.internal.KotlinAnnotationPrinter;
 import com.guardsquare.proguard.kotlin.printer.internal.visitor.ConstantToStringVisitor;
+import com.guardsquare.proguard.kotlin.printer.internal.visitor.ContextParameterValueParameterVisitor;
 import com.guardsquare.proguard.kotlin.printer.internal.visitor.KotlinClassTypeParameterVisitor;
 import com.guardsquare.proguard.kotlin.printer.internal.visitor.KotlinMetadataVisitorWrapper;
 import com.guardsquare.proguard.kotlin.printer.internal.visitor.KotlinTypeParameterVisitorWrapper;
+import com.guardsquare.proguard.kotlin.printer.internal.visitor.KotlinTypeVisitorWrapper;
 import proguard.classfile.ClassPool;
 import proguard.classfile.Clazz;
 import proguard.classfile.Method;
@@ -62,7 +64,6 @@ import proguard.classfile.visitor.ClassPoolFiller;
 import proguard.classfile.visitor.ClassPresenceFilter;
 import proguard.classfile.visitor.MultiClassVisitor;
 import proguard.classfile.visitor.MultiMemberVisitor;
-import com.guardsquare.proguard.kotlin.printer.internal.visitor.KotlinTypeVisitorWrapper;
 
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -699,6 +700,16 @@ implements   KotlinMetadataVisitor
                 (i, _kotlinTypeMetadata) -> {
                     if (i == kotlinPropertyMetadata.contextReceivers.size() - 1) println(")");
                 }));
+            kotlinPropertyMetadata.contextParameterValuesAccept(clazz, kotlinDeclarationContainerMetadata, new ContextParameterValueParameterVisitor(
+                    (i, _kotlinTypeMetadata) -> print(i == 0 ? "context(" : ", ", true),
+                    (clazzParameter, kotlinValueParameterMetadata) -> {
+                        print(kotlinValueParameterMetadata.parameterName);
+                        print(": ");
+                        kotlinValueParameterMetadata.typeAccept(clazzParameter, kotlinDeclarationContainerMetadata, kotlinPropertyMetadata, this);
+                    },
+                    (i, _kotlinTypeMetadata) -> {
+                        if (i == kotlinPropertyMetadata.contextParameters.size() - 1) println(")");
+                    }));
 
             print(propertyFlags(kotlinPropertyMetadata.flags), true);
 
@@ -768,7 +779,7 @@ implements   KotlinMetadataVisitor
             {
                 indent();
                 println();
-                if (!kotlinPropertyMetadata.getterMetadata.annotations.isEmpty() &&
+                if (kotlinPropertyMetadata.getterMetadata.hasAnnotationsInBytecode &&
                     kotlinPropertyMetadata.getterMetadata.referencedMethod != null)
                 {
                     kotlinPropertyMetadata.getterMetadata.referencedMethod.accept(clazz,
@@ -798,7 +809,7 @@ implements   KotlinMetadataVisitor
             {
                 indent();
                 println();
-                if (!kotlinPropertyMetadata.setterMetadata.annotations.isEmpty() &&
+                if (kotlinPropertyMetadata.setterMetadata.hasAnnotationsInBytecode &&
                     kotlinPropertyMetadata.setterMetadata.referencedMethod != null)
                 {
                     kotlinPropertyMetadata.setterMetadata.referencedMethod.accept(clazz,
@@ -1031,6 +1042,17 @@ implements   KotlinMetadataVisitor
                 (i, _kotlinTypeMetadata) -> {
                     if (i == kotlinFunctionMetadata.contextReceivers.size() - 1) println(")");
                 }));
+            kotlinFunctionMetadata.contextParameterValuesAccept(clazz, kotlinMetadata, new ContextParameterValueParameterVisitor(
+                (i, _kotlinValueParameterMetadata) -> print(i == 0 ? "context(" : ", ", true),
+                    (clazzParameter, kotlinValueParameterMetadata) -> {
+                        print(kotlinValueParameterMetadata.parameterName);
+                        print(": ");
+                        kotlinValueParameterMetadata.typeAccept(clazzParameter, kotlinMetadata, kotlinFunctionMetadata, this);
+                    },
+                (i, _kotlinValueParameterMetadata) -> {
+                    if (i == kotlinFunctionMetadata.contextParameters.size() - 1) println(")");
+                }
+            ));
             print(functionFlags(kotlinFunctionMetadata.flags), true);
             print("fun ");
             kotlinFunctionMetadata.typeParametersAccept(clazz, kotlinMetadata, context);

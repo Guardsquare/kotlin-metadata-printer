@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import proguard.classfile.kotlin.visitor.ReferencedKotlinMetadataVisitor
 import proguard.testutils.ClassPoolBuilder
 import proguard.testutils.KotlinSource
+import util.kotlinVersion
 
 class KotlinTwoPointTwoTest : FunSpec({
     test("Non-local break & continue") {
@@ -37,7 +38,7 @@ class KotlinTwoPointTwoTest : FunSpec({
 
         testKtMetadata.trimEnd() shouldBe """
         /**
-        * Kotlin file facade (metadata version 2.2.0).
+        * Kotlin file facade (metadata version $kotlinVersion).
         * From Java class: TestKt
         */
         
@@ -73,7 +74,7 @@ class KotlinTwoPointTwoTest : FunSpec({
 
         containerMetadata.trimEnd() shouldBe """
         /**
-        * Kotlin class (metadata version 2.2.0).
+        * Kotlin class (metadata version $kotlinVersion).
         * From Java class: Container
         */
         class Container {
@@ -113,11 +114,11 @@ class KotlinTwoPointTwoTest : FunSpec({
 
         coreLibraryApiMetadata.trimEnd() shouldBe """
         /**
-        * Kotlin class (metadata version 2.2.0).
+        * Kotlin class (metadata version $kotlinVersion).
         * From Java class: CoreLibraryApi
         */
         @SubclassOptInRequired(markerClass = {UnstableApi})
-        interface CoreLibraryApi
+        interface /* compiledInCompatibilityMode */ /* hasMethodBodiesInInterface */CoreLibraryApi
         """.trimIndent()
 
         val unstableApiMetadata = programClassPool.getClass("UnstableApi").processingInfo as String
@@ -125,7 +126,7 @@ class KotlinTwoPointTwoTest : FunSpec({
 
         unstableApiMetadata.trimEnd() shouldBe """
         /**
-        * Kotlin class (metadata version 2.2.0).
+        * Kotlin class (metadata version $kotlinVersion).
         * From Java class: UnstableApi
         */
         @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
@@ -172,7 +173,7 @@ class KotlinTwoPointTwoTest : FunSpec({
 
         testKtMetadata.trimEnd() shouldBe """
         /**
-        * Kotlin file facade (metadata version 2.2.0).
+        * Kotlin file facade (metadata version $kotlinVersion).
         * From Java class: TestKt
         */
         
@@ -209,7 +210,7 @@ class KotlinTwoPointTwoTest : FunSpec({
 
         multiDollarMetadata.trimEnd() shouldBe """
         /**
-        * Kotlin class (metadata version 2.2.0).
+        * Kotlin class (metadata version $kotlinVersion).
         * From Java class: MultiDollar
         */
         class MultiDollar {
@@ -241,7 +242,7 @@ class KotlinTwoPointTwoTest : FunSpec({
 
         multiDollarCompanionMetadata.trimEnd() shouldBe """
         /**
-        * Kotlin companion class (metadata version 2.2.0).
+        * Kotlin companion class (metadata version $kotlinVersion).
         * From Java class: MultiDollar${"$"}Companion
         */
         companion object MultiDollar_Companion {
