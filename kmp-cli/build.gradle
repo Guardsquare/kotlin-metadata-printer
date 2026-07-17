@@ -1,5 +1,4 @@
 import proguard.gradle.ProGuardTask
-
 buildscript {
     repositories {
         mavenCentral()
@@ -16,10 +15,14 @@ plugins {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(8))
+        languageVersion.set(JavaLanguageVersion.of(11))
     }
 }
-
+tasks.withType(JavaCompile).configureEach {
+    if (!it.name.contains("Test")) {
+        options.release = 8
+    }
+}
 application {
     mainClass = "com.guardsquare.proguard.kotlin.printer.KotlinMetadataPrinterCli"
 }
@@ -52,7 +55,7 @@ dependencies {
 }
 
 def compiler = javaToolchains.compilerFor {
-    languageVersion = JavaLanguageVersion.of(8)
+    languageVersion = JavaLanguageVersion.of(11)
 }
 
 def copyBuild = tasks.register("copyBuild" ,Copy) {

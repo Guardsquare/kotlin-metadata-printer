@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id 'java'
     id 'java-library'
@@ -10,10 +12,20 @@ plugins {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(8))
+        languageVersion.set(JavaLanguageVersion.of(11))
     }
     withJavadocJar()
     withSourcesJar()
+}
+tasks.withType(JavaCompile).configureEach {
+    if (!it.name.contains("Test")) {
+        options.release = 8
+    }
+}
+tasks.withType(KotlinCompile).configureEach {
+    if (!it.name.contains("Test")) {
+        it.compilerOptions.jvmTarget = JvmTarget.JVM_1_8
+    }
 }
 
 components.java.withVariantsFromConfiguration(configurations.testFixturesApiElements) { skip() }
