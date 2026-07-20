@@ -58,7 +58,6 @@ class KotlinTwoPointTwoTest : FunSpec({
 
                 """.trimIndent(),
             ),
-            kotlincArguments = listOf("-Xnested-type-aliases")
         )
 
         programClassPool.classesAccept(
@@ -80,7 +79,8 @@ class KotlinTwoPointTwoTest : FunSpec({
         class Container {
         
             // Type aliases
-        
+
+            @SinceKotlin("2.3.0")
             typealias ContainerSet = Set<Container>
         }
         """.trimIndent()
